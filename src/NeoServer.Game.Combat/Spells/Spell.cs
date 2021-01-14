@@ -1,13 +1,15 @@
 ﻿using NeoServer.Enums.Creatures.Enums;
+using NeoServer.Game.Common;
+using NeoServer.Game.Common.Conditions;
+using NeoServer.Game.Common.Creatures.Players;
 using NeoServer.Game.Contracts.Creatures;
 using NeoServer.Game.Contracts.Spells;
-using NeoServer.Game.Common;
-using NeoServer.Game.Common.Creatures.Players;
+using NeoServer.Game.Creatures.Enums;
 using NeoServer.Server.Model.Players.Contracts;
 using System;
-using NeoServer.Game.Common.Conditions;
+using System.Linq;
 
-namespace NeoServer.Game.Creatures.Spells
+namespace NeoServer.Game.Combat.Spells
 {
     public abstract class BaseSpell: ISpell
     {
@@ -15,14 +17,15 @@ namespace NeoServer.Game.Creatures.Spells
         public abstract EffectT Effect { get; }
         public abstract uint Duration { get; }
         public virtual ushort Mana { get; set; }
-        public ushort MinLevel { get; set; }
+        public virtual ushort MinLevel { get; set; } = 0;
+        public virtual byte[] Vocations { get; set; }
         public uint Cooldown { get; set; }
 
         public static event InvokeSpell OnSpellInvoked;
 
-        public abstract void OnCast(ICombatActor actor);
+        public abstract bool OnCast(ICombatActor actor, string words, out InvalidOperation error);
 
-        public bool InvokeOn(ICombatActor actor, ICombatActor onCreature, out InvalidOperation error)
+        public bool InvokeOn(ICombatActor actor, ICombatActor onCreature,string words, out InvalidOperation error)
         {
             if (!CanBeUsedBy(actor, out error)) return false;
             if (actor is IPlayer player)
@@ -30,7 +33,8 @@ namespace NeoServer.Game.Creatures.Spells
                 player.ConsumeMana(Mana);
             }
 
-            if (!onCreature.HasCondition(ConditionType)) OnCast(onCreature);
+            if (!onCreature.HasCondition(ConditionType))
+                if (!OnCast(onCreature, words, out error)) return false;
 
             AddCondition(onCreature);
 
@@ -39,7 +43,7 @@ namespace NeoServer.Game.Creatures.Spells
             OnSpellInvoked?.Invoke(onCreature, this);
             return true;
         }
-        public bool Invoke(ICombatActor actor, out InvalidOperation error)
+        public bool Invoke(ICombatActor actor, string words, out InvalidOperation error)
         {
             if (!CanBeUsedBy(actor, out error)) return false;
             if (actor is IPlayer player)
@@ -47,7 +51,8 @@ namespace NeoServer.Game.Creatures.Spells
                 player.ConsumeMana(Mana);
             }
 
-            if (!actor.HasCondition(ConditionType)) OnCast(actor);
+            if (!actor.HasCondition(ConditionType)) 
+                if(!OnCast(actor, words, out error)) return false;
 
             AddCondition(actor);
 
@@ -72,7 +77,14 @@ namespace NeoServer.Game.Creatures.Spells
                     error = InvalidOperation.NotEnoughLevel;
                     return false;
                 }
-                if (!player.SpellCooldownHasExpired(this) || !player.CooldownHasExpired(Enums.CooldownType.Spell))
+
+                if(!Vocations?.Contains(player.VocationType) ?? false)
+                {
+                    error = InvalidOperation.VocationCannotUseSpell;
+                    return false;
+                }
+
+                if (!player.SpellCooldownHasExpired(this) || !player.CooldownHasExpired(CooldownType.Spell))
                 {
                     error = InvalidOperation.Exhausted;
                     return false;
@@ -82,6 +94,8 @@ namespace NeoServer.Game.Creatures.Spells
         }
 
         public abstract ConditionType ConditionType { get; }
+
+        public virtual bool ShouldSay { get; }
 
         public virtual void OnEnd(ICombatActor actor) { }
 
@@ -104,10 +118,8 @@ namespace NeoServer.Game.Creatures.Spells
     }
     public abstract class Spell<T> : BaseSpell where T : ISpell
     {
-        public Spell()
-        {
-
-        }
+        public override bool ShouldSay => true;
+        public string Words { get; set; }
         private static readonly Lazy<T> Lazy = new Lazy<T>(() => (T)Activator.CreateInstance(typeof(T), true));
         public static T Instance => Lazy.Value;
     }

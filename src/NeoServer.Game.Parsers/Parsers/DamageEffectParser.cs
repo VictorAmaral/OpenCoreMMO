@@ -1,8 +1,5 @@
 ﻿using NeoServer.Enums.Creatures.Enums;
 using NeoServer.Game.Common.Item;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace NeoServer.Game.Parsers.Effects
 {
@@ -18,6 +15,7 @@ namespace NeoServer.Game.Parsers.Effects
             DamageType.Earth => EffectT.RingsGreen,
             DamageType.AbsorbPercentPhysical => EffectT.GlitterRed,
             DamageType.ManaDrain => EffectT.GlitterRed,
+            DamageType.Death => EffectT.BubbleBlack,
             _ => EffectT.None
         };
     }

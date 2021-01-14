@@ -21,6 +21,7 @@ namespace NeoServer.Server.Commands.Player
 
         public override void Execute()
         {
+        
             if (ContainerToContainerMovementOperation.IsApplicable(itemThrow))
             {
                 ContainerToContainerMovementOperation.Execute(player, itemThrow);

@@ -1,25 +1,53 @@
-﻿using NeoServer.Game.Contracts;
-using NeoServer.Game.Contracts.Combat;
-using NeoServer.Game.Contracts.Items;
-using NeoServer.Game.Common;
+﻿using NeoServer.Game.Common;
 using NeoServer.Game.Common.Location.Structs;
+using NeoServer.Game.Contracts;
+using NeoServer.Game.Contracts.Items;
 using NeoServer.Game.Items.Items;
+using NeoServer.Game.Items.Items.Containers;
+using NeoServer.Game.Items.Items.UsableItems;
+using NeoServer.Game.Items.Items.UsableItems.Runes;
 using NeoServer.Server.Items;
 using System;
 using System.Collections.Generic;
-using NeoServer.Game.Items.Items.Containers;
-using NeoServer.Game.Items.Items.UsableItems;
+using System.Linq;
 
 namespace NeoServer.Game.Items
 {
     public class ItemFactory : IItemFactory, IFactory
     {
         public event CreateItem OnItemCreated;
+        public ItemFactory()
+        {
+            Instance = this;
+        }
+
+        public static IItemFactory Instance { get; private set; }
+
+        public IEnumerable<IItemEventSubscriber> ItemEventSubscribers { get; set; }
 
         public IItem Create(ushort typeId, Location location, IDictionary<ItemAttribute, IConvertible> attributes)
         {
             var createdItem = CreateItem(typeId, location, attributes);
+
+            foreach (var gameSubscriber in ItemEventSubscribers.Where(x => x.GetType().IsAssignableTo(typeof(IGameEventSubscriber)))) //register game events first
+            {
+                gameSubscriber.Subscribe(createdItem);
+            }
+
+            foreach (var subscriber in ItemEventSubscribers.Where(x => !x.GetType().IsAssignableTo(typeof(IGameEventSubscriber)))) //than register server events
+            {
+                subscriber.Subscribe(createdItem);
+            }
+
             return createdItem;
+        }
+
+        public IItem Create(string name, Location location, IDictionary<ItemAttribute, IConvertible> attributes)
+        {
+            var item = ItemTypeData.InMemory.Values.FirstOrDefault(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+            if (item is null) return null;
+
+            return Create(item.TypeId, location, attributes);
         }
 
         private IItem CreateItem(ushort typeId, Location location, IDictionary<ItemAttribute, IConvertible> attributes)
@@ -96,6 +124,17 @@ namespace NeoServer.Game.Items
                 {
                     return new Food(itemType, location, attributes);
                 }
+                if (Rune.IsApplicable(itemType))
+                {
+                    if (AttackRune.IsApplicable(itemType))
+                    {
+                        return new AttackRune(itemType, location, attributes);
+                    }
+                    if (FieldRune.IsApplicable(itemType))
+                    {
+                        return new FieldRune(itemType, location, attributes);
+                    }
+                }
                 return new Cumulative(itemType, location, attributes);
             }
             if (LiquidPoolItem.IsApplicable(itemType))
@@ -118,10 +157,10 @@ namespace NeoServer.Game.Items
                 }
                 if (TransformerUsableItem.IsApplicable(itemType))
                 {
-                    return new TransformerUsableItem(itemType, location, this); 
+                    return new TransformerUsableItem(itemType, location); 
                 }
            
-                return new UseableOnItem(itemType, location);
+                //return new UseableOnItem(itemType, location);
             }
 
             return new Item(ItemTypeData.InMemory[typeId], location);

@@ -1,10 +1,5 @@
 ﻿using NeoServer.Game.Contracts.Creatures;
 using NeoServer.Server.Contracts.Network;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace NeoServer.Networking.Packets.Outgoing
 {
@@ -34,7 +29,7 @@ namespace NeoServer.Networking.Packets.Outgoing
             }
             else
             {
-                //message.AddUInt16(creature.Outfit.LookTypeEx) //todo
+                message.AddUInt16(0); //todo
             }
         }
 

@@ -1,9 +1,9 @@
 ﻿using NeoServer.Game.Common;
+using NeoServer.Game.Common.Helpers;
 using NeoServer.Game.Common.Location.Structs;
 using NeoServer.Game.Contracts.Creatures;
 using NeoServer.Game.Contracts.Items;
 using NeoServer.Game.Contracts.Items.Types;
-using NeoServer.Server.Helpers;
 using NeoServer.Server.Model.Players.Contracts;
 using System;
 using System.Collections.Generic;
@@ -19,16 +19,17 @@ namespace NeoServer.Game.Items.Items.UsableItems
         public ushort Min => Metadata.Attributes.GetInnerAttributes(ItemAttribute.Healing)?.GetAttribute<ushort>(ItemAttribute.Min) ?? 0;
         public ushort Max => Metadata.Attributes.GetInnerAttributes(ItemAttribute.Healing)?.GetAttribute<ushort>(ItemAttribute.Max) ?? 0;
         public string Type => Metadata.Attributes.GetAttribute(ItemAttribute.Healing);
-        public string Sentence => Metadata.Attributes.GetAttribute(ItemAttribute.Sentence);
+      
+        public event Use OnUsed;
 
         public static new bool IsApplicable(IItemType type) => (type.Attributes?.HasAttribute(ItemAttribute.Healing) ?? false) && Cumulative.IsApplicable(type) && UseableOnItem.IsApplicable(type);
 
-        public void Use(ICreature creature)
+        public void Use(IPlayer usedBy, ICreature creature)
         {
             if (creature is not ICombatActor actor) return;
             if (Max == 0) return;
 
-            var value = (ushort)ServerRandom.Random.Next(minValue: Min, maxValue: Max);
+            var value = (ushort)GameRandom.Random.Next(minValue: Min, maxValue: Max);
 
             if (Type.Equals("hp", StringComparison.InvariantCultureIgnoreCase))
             {
@@ -39,12 +40,9 @@ namespace NeoServer.Game.Items.Items.UsableItems
                 player.HealMana(value);
             }
 
-            if (!string.IsNullOrWhiteSpace(Sentence))
-            {
-                creature.Say(Sentence, Common.Talks.TalkType.MonsterSay);
-            }
-
             Reduce();
+
+            OnUsed?.Invoke(usedBy, creature, this);
         }
     }
 }

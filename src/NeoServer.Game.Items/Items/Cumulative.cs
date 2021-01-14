@@ -1,7 +1,7 @@
-﻿using NeoServer.Game.Contracts.Items;
-using NeoServer.Game.Contracts.Items.Types;
-using NeoServer.Game.Common;
+﻿using NeoServer.Game.Common;
 using NeoServer.Game.Common.Location.Structs;
+using NeoServer.Game.Contracts.Items;
+using NeoServer.Game.Contracts.Items.Types;
 using System;
 using System.Collections.Generic;
 
@@ -12,9 +12,10 @@ namespace NeoServer.Game.Items.Items
         public Cumulative(IItemType type, Location location, IDictionary<ItemAttribute, IConvertible> attributes) : base(type, location)
         {
             Amount = 1;
-            if (attributes != null && attributes.TryGetValue(Common.ItemAttribute.Count, out var amount))
+            if (attributes != null && attributes.TryGetValue(Common.ItemAttribute.Count, out var count))
             {
-                Amount = Math.Min((byte)100, (byte)amount);
+                var amount = Convert.ToByte(count);
+                Amount = Math.Min((byte)100, amount);
             }
         }
 

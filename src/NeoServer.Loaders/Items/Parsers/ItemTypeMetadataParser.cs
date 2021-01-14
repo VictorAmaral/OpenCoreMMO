@@ -1,10 +1,7 @@
-using NeoServer.Game.Common.Parsers;
-using NeoServer.Game.Common.Players;
 using NeoServer.Game.Contracts.Items;
 using NeoServer.Game.Items;
 using NeoServer.OTB.Parsers;
 using Newtonsoft.Json.Linq;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -63,7 +60,16 @@ namespace NeoServer.Loaders.Items
             {
                 var itemAttribute = ItemAttributeTranslationMap.TranslateAttributeName(attribute.Key, out bool success);
                 itemType.SetOnUse();
-                itemType.OnUse.SetAttribute(itemAttribute, attribute.Value);
+
+                if (itemAttribute == Game.Common.ItemAttribute.None)
+                {
+                    itemType.OnUse.SetCustomAttribute(attribute.Key, attribute.Value);
+
+                }
+                else
+                {
+                    itemType.OnUse.SetAttribute(itemAttribute, attribute.Value);
+                }
             }
         }
 
@@ -81,13 +87,27 @@ namespace NeoServer.Loaders.Items
                     {
                         value = jArray.ToObject<string[]>();
 
-                        value = itemAttribute == Game.Common.ItemAttribute.Vocation ? GetVocationAttribute(value) : value;
-                        attributes.SetAttribute(itemAttribute,values: value);
+                        if (itemAttribute == Game.Common.ItemAttribute.None)
+                        {
+                            attributes.SetCustomAttribute(attribute.Key, values: value);
+                        }
+                        else
+                        {
+                            attributes.SetAttribute(itemAttribute, values: value);
+                        }
 
                     }
                     else
                     {
-                        attributes.SetAttribute(itemAttribute, value);
+                        if (itemAttribute == Game.Common.ItemAttribute.None)
+                        {
+                            attributes.SetCustomAttribute(attribute.Key, value);
+                        }
+                        else
+                        {
+                            attributes.SetAttribute(itemAttribute, value);
+                        }
+                        
                     }
                 }
                 else
@@ -96,24 +116,20 @@ namespace NeoServer.Loaders.Items
 
                     SetAttributes(attribute.Attributes, innerAttributes);
 
-                    attributes.SetAttribute(itemAttribute, value, innerAttributes);
+                    if (itemAttribute == Game.Common.ItemAttribute.None)
+                    {
+                        attributes.SetCustomAttribute(attribute.Key, value, innerAttributes);
+
+                    }
+                    else
+                    {
+                        attributes.SetAttribute(itemAttribute, value, innerAttributes);
+                    }
                 }
 
             }
         }
 
-        private static VocationType[] GetVocationAttribute(dynamic value)
-        {
-            if (value is null) return default;
-
-            if (value is dynamic[] array)
-            {
-                return array.Select(x => VocationTypeParser.Parse((string)x)).ToArray();
-            }
-            else
-            {
-                return new VocationType[] { VocationTypeParser.Parse((string)value) };
-            }
-        }
+   
     }
 }

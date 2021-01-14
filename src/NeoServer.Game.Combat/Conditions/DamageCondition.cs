@@ -1,9 +1,13 @@
-﻿using NeoServer.Game.Common.Combat.Structs;
+﻿using NeoServer.Enums.Creatures.Enums;
+using NeoServer.Game.Common.Combat.Structs;
 using NeoServer.Game.Common.Creatures.Players;
 using NeoServer.Game.Common.Creatures.Structs;
+using NeoServer.Game.Common.Helpers;
 using NeoServer.Game.Common.Item;
+using NeoServer.Game.Common.Parsers;
 using NeoServer.Game.Contracts.Creatures;
-using NeoServer.Server.Helpers;
+using NeoServer.Game.Effects.Parsers;
+using NeoServer.Game.Parsers.Effects;
 using System;
 using System.Collections.Generic;
 
@@ -11,18 +15,32 @@ namespace NeoServer.Game.Common.Conditions
 {
     public class DamageCondition : BaseCondition
     {
-        public DamageCondition(ConditionType type, int interval, ushort minDamage, ushort maxDamage) : base(0)
+        public DamageCondition(ConditionType type, int interval, ushort minDamage, ushort maxDamage, EffectT effect = EffectT.None) : base(0)
         {
             Type = type;
             Interval = interval;
-            DamageType = ToDamageType(type);
+            DamageType = ConditionTypeParser.Parse(type);
             MaxDamage = maxDamage;
             MinDamage = minDamage;
+            Effect = effect;
 
-            GenerateDamageList();
         }
+        public DamageCondition(ConditionType type, int interval, byte amount, ushort damage, EffectT effect = EffectT.None) : base(0)
+        {
+            if (amount == 0) return;
+
+            Type = type;
+            Interval = interval;
+            DamageType = ConditionTypeParser.Parse(type);
+            MaxDamage = damage;
+            MinDamage = damage;
+            Effect = effect;
+            Amount = amount;
+        }
+        public byte Amount { get; }
         public override ConditionType Type { get; }
         public DamageType DamageType { get; set; }
+        public EffectT Effect { get; }
         public int Interval
         {
             set
@@ -46,7 +64,7 @@ namespace NeoServer.Game.Common.Conditions
                 End();
                 return;
             }
-            creature.ReceiveAttack(null, new CombatDamage(damage, DamageType));
+            creature.ReceiveAttack(null, new CombatDamage(damage, DamageType, DamageEffectParser.Parse(DamageType)));
         }
         public bool Start(ICreature creature, ushort minDamage, ushort maxDamage)
         {
@@ -60,7 +78,19 @@ namespace NeoServer.Game.Common.Conditions
         }
         public override bool Start(ICreature creature)
         {
-            GenerateDamageList();
+            if (Amount == 0)
+            {
+                GenerateDamageList();
+            }
+            else
+            {
+                GenerateDamageList(Amount);
+            }
+            return true;
+        }
+        public bool Restart(byte amount)
+        {
+            GenerateDamageList(amount);
             return true;
         }
 
@@ -77,6 +107,14 @@ namespace NeoServer.Game.Common.Conditions
             }
             return startDamage;
         }
+        private void GenerateDamageList(byte amount)
+        {
+            DamageQueue = DamageQueue ?? new Queue<ushort>();
+            for (int i = 0; i < amount - DamageQueue.Count; i++)
+            {
+                DamageQueue.Enqueue(MaxDamage);
+            }
+        }
         private void GenerateDamageList()
         {
             if (DamageQueue is null)
@@ -84,7 +122,7 @@ namespace NeoServer.Game.Common.Conditions
                 DamageQueue = new Queue<ushort>();
             }
 
-            int amount = (ushort)ServerRandom.Random.Next(minValue: MinDamage, maxValue: MaxDamage);
+            int amount = (ushort)GameRandom.Random.Next(minValue: MinDamage, maxValue: MaxDamage);
             var start = GetStartDamage(MaxDamage, amount);
 
             DamageQueue.Clear();
@@ -109,16 +147,7 @@ namespace NeoServer.Game.Common.Conditions
             }
         }
 
-        private DamageType ToDamageType(ConditionType type)
-        {
-            return type switch
-            {
-                ConditionType.Poison => DamageType.Earth,
-                ConditionType.Fire => DamageType.FireField,
-                ConditionType.Energy => DamageType.Energy,
-                _ => DamageType.None
-            };
-        }
+   
     }
 }
 

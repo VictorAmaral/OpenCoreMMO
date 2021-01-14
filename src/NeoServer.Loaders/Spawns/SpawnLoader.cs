@@ -25,12 +25,12 @@ namespace NeoServer.Loaders.Spawns
             var spawns = spawnData.AsParallel().Select(x => SpawnConverter.Convert(x)).ToList();
 
             _world.LoadSpawns(spawns);
-            logger.Information($"{spawns.Count} spawns loaded!");
+            logger.Information("{n} spawns loaded!", spawns.Count);
         }
 
         private IEnumerable<SpawnData> GetSpawnData()
         {
-            var basePath = "./data/world/";
+            var basePath = $"{serverConfiguration.Data}/world/";
 
             var spawnPath = Path.Combine(basePath, $"{serverConfiguration.OTBM.Replace(".otbm", "-spawn")}.json");
             if (!File.Exists(spawnPath))

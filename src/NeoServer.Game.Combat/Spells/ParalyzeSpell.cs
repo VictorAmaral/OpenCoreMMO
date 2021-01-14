@@ -1,9 +1,8 @@
 ﻿using NeoServer.Enums.Creatures.Enums;
-using NeoServer.Game.Contracts.Creatures;
+using NeoServer.Game.Combat.Spells;
+using NeoServer.Game.Common;
 using NeoServer.Game.Common.Creatures.Players;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using NeoServer.Game.Contracts.Creatures;
 
 namespace NeoServer.Game.Creatures.Spells
 {
@@ -21,12 +20,15 @@ namespace NeoServer.Game.Creatures.Spells
         private float MaxA;
         private float MaxB;
 
-        public override void OnCast(ICombatActor actor)
+        public override bool OnCast(ICombatActor actor, string words, out InvalidOperation error)
         {
+            error = InvalidOperation.None;
+
             var min = (actor.Speed * MinA) + MinB;
             var max = (actor.Speed * MaxA) + MaxB;
 
             actor.DecreaseSpeed(SpeedChange);
+            return true;
         }
         public override void OnEnd(ICombatActor actor)
         {

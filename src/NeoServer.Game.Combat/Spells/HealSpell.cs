@@ -1,11 +1,9 @@
 ﻿using NeoServer.Enums.Creatures.Enums;
-using NeoServer.Game.Contracts.Creatures;
-using NeoServer.Game.Common.Creatures.Players;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using NeoServer.Game.Combat.Spells;
 using NeoServer.Game.Common;
-using NeoServer.Server.Helpers;
+using NeoServer.Game.Common.Creatures.Players;
+using NeoServer.Game.Common.Helpers;
+using NeoServer.Game.Contracts.Creatures;
 
 namespace NeoServer.Game.Creatures.Spells
 {
@@ -25,10 +23,13 @@ namespace NeoServer.Game.Creatures.Spells
             Min = (ushort) minMax.Min;
             Max = (ushort) minMax.Max;
         }
-        public override void OnCast(ICombatActor actor)
+        public override bool OnCast(ICombatActor actor, string words, out InvalidOperation error)
         {
-            var hpToIncrease = ServerRandom.Random.NextInRange(Min, Max);
+            error = InvalidOperation.None;
+
+            var hpToIncrease = GameRandom.Random.NextInRange(Min, Max);
             actor.Heal((ushort)hpToIncrease);
+            return true;
         }
         public override void OnEnd(ICombatActor actor)
         {

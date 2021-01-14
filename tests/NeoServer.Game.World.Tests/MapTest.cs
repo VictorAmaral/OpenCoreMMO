@@ -1,13 +1,9 @@
-﻿using NeoServer.Game.Contracts.Items;
-using NeoServer.Game.Contracts.World.Tiles;
-using NeoServer.Game.Common.Location;
+﻿using NeoServer.Game.Common.Location;
 using NeoServer.Game.Common.Location.Structs;
+using NeoServer.Game.Contracts.Items;
 using NeoServer.Game.Items.Tests;
 using NeoServer.Game.World.Map.Tiles;
-using NeoServer.Game.World.Tests.TestData;
 using System.Collections.Generic;
-using System.Linq;
-using Xunit;
 
 namespace NeoServer.Game.World.Tests
 {
@@ -41,18 +37,6 @@ namespace NeoServer.Game.World.Tests
 
         }
 
-        [Fact]
-        public void RemoveThing_RemovesThingFromTile()
-        {
-            var item = ItemTestData.CreateMoveableItem(2);
-
-            var map = CreateMap(item);
-
-            var thing = item as IThing;
-            map.RemoveThing(thing, map[100, 100, 7] as IDynamicTile);
-
-            Assert.Single((map[100, 100, 7] as IDynamicTile).DownItems);
-            Assert.Equal(1, (map[100, 100, 7] as IDynamicTile).DownItems.First().ClientId);
-        }
+        
     }
 }

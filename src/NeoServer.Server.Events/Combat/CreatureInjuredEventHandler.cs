@@ -1,11 +1,9 @@
-﻿using Microsoft.Diagnostics.Runtime.Utilities;
-using NeoServer.Game.Contracts;
-using NeoServer.Game.Contracts.Combat;
-using NeoServer.Game.Contracts.Creatures;
-using NeoServer.Game.Effects.Explosion;
-using NeoServer.Game.Common;
+﻿using NeoServer.Enums.Creatures.Enums;
 using NeoServer.Game.Common.Combat.Structs;
 using NeoServer.Game.Common.Item;
+using NeoServer.Game.Contracts;
+using NeoServer.Game.Contracts.Creatures;
+using NeoServer.Game.Contracts.Items;
 using NeoServer.Game.Parsers.Effects;
 using NeoServer.Networking.Packets.Outgoing;
 using NeoServer.Server.Contracts.Network;
@@ -23,7 +21,7 @@ namespace NeoServer.Server.Events
             this.map = map;
             this.game = game;
         }
-        public void Execute(ICreature enemy, ICreature victim, CombatDamage damage)
+        public void Execute(IThing enemy, ICreature victim, CombatDamage damage)
         {
             foreach (var spectator in map.GetPlayersAtPositionZone(victim.Location))
             {
@@ -51,10 +49,13 @@ namespace NeoServer.Server.Events
 
                 var damageTextColor = DamageTextColorParser.Parse(damage.Type);
 
-                if (damage.Type != default)
+                if (!damage.IsElementalDamage)
                 {
-                    var damageEffect = DamageEffectParser.Parse(damage.Type);
-                    connection.OutgoingPackets.Enqueue(new MagicEffectPacket(victim.Location, damageEffect));
+                    var damageEffect = damage.Effect == EffectT.None ? DamageEffectParser.Parse(damage.Type) : damage.Effect;
+                    if(damageEffect != EffectT.None) connection.OutgoingPackets.Enqueue(new MagicEffectPacket(victim.Location, damageEffect));
+                }else if (damage.Effect !=  EffectT.None)
+                {
+                    connection.OutgoingPackets.Enqueue(new MagicEffectPacket(victim.Location, damage.Effect));
                 }
 
                 connection.OutgoingPackets.Enqueue(new AnimatedTextPacket(victim.Location, damageTextColor, damageString));

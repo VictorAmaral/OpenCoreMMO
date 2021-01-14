@@ -1,15 +1,12 @@
-using NeoServer.Game.Contracts.Combat;
-using NeoServer.Game.Contracts.Items;
-using NeoServer.Game.Contracts.World.Tiles;
-using NeoServer.Game.Creatures.Enums;
 using NeoServer.Game.Common.Creatures.Players;
 using NeoServer.Game.Common.Location;
 using NeoServer.Game.Common.Location.Structs;
 using NeoServer.Game.Common.Talks;
-using NeoServer.Server.Model.Players.Contracts;
-using System;
+using NeoServer.Game.Contracts.Items;
+using NeoServer.Game.Contracts.World;
+using NeoServer.Game.Contracts.World.Tiles;
+using NeoServer.Game.Creatures.Enums;
 using System.Collections.Generic;
-using NeoServer.Game.Contracts.Items.Types;
 
 namespace NeoServer.Game.Contracts.Creatures
 {
@@ -50,12 +47,15 @@ namespace NeoServer.Game.Contracts.Creatures
         bool IsHealthHidden { get; }
         IThing Corpse { get; set; }
         IOutfit OldOutfit { get; }
+        IDynamicTile Tile { get; set; }
+        bool CanBeSeen { get; }
 
         event RemoveCreature OnCreatureRemoved;
         event GainExperience OnGainedExperience;
         event Say OnSay;
         event RemoveCondition OnRemovedCondition;
         event ChangeOutfit OnChangedOutfit;
+        event AddCondition OnAddedCondition;
 
         void AddCondition(ICondition condition);
         bool CanSee(Contracts.Creatures.ICreature otherCreature);
@@ -67,6 +67,7 @@ namespace NeoServer.Game.Contracts.Creatures
         bool HasCondition(ConditionType type, out ICondition condition);
         bool HasCondition(ConditionType type);
         bool HasFlag(CreatureFlag flag);
+        void OnCreatureAppear(Location location, ICylinderSpectator[] spectators);
         void RemoveCondition(ICondition condition);
         void Say(string message, TalkType talkType);
         void SetAsRemoved();

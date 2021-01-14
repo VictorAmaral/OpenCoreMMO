@@ -1,17 +1,18 @@
-﻿using NeoServer.Game.Contracts.Creatures;
-using NeoServer.Game.Contracts.Items;
-using NeoServer.Game.Creature.Model;
-using NeoServer.Game.Creatures.Enums;
+﻿using NeoServer.Enums.Creatures.Enums;
 using NeoServer.Game.Common.Creatures;
 using NeoServer.Game.Common.Creatures.Players;
 using NeoServer.Game.Common.Location;
 using NeoServer.Game.Common.Location.Structs;
 using NeoServer.Game.Common.Talks;
-using NeoServer.Server.Helpers;
+using NeoServer.Game.Contracts.Creatures;
+using NeoServer.Game.Contracts.Items;
+using NeoServer.Game.Contracts.World;
+using NeoServer.Game.Contracts.World.Tiles;
+using NeoServer.Game.Creature.Model;
+using NeoServer.Game.Creatures.Enums;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using NeoServer.Game.Contracts.Items.Types;
 
 namespace NeoServer.Game.Creatures.Model
 {
@@ -42,7 +43,11 @@ namespace NeoServer.Game.Creatures.Model
             CreatureId = RandomIdGenerator.Generate();
             Outfit = outfit ?? new Outfit()
             {
-                LookType = type.Look[LookType.Type]
+                LookType = type.Look[LookType.Type],
+                Body = (byte)type.Look[LookType.Body],
+                Feet = (byte)type.Look[LookType.Feet],
+                Head = (byte)type.Look[LookType.Head],
+                Legs = (byte)type.Look[LookType.Legs],
             };
             Hostiles = new HashSet<uint>();
             Friendly = new HashSet<uint>();
@@ -50,7 +55,19 @@ namespace NeoServer.Game.Creatures.Model
 
         }
 
-        //public Location Location { get; set; }
+        private IDynamicTile tile;
+        public IDynamicTile Tile
+        {
+            get
+            {
+                return tile;
+            }
+            set
+            {
+                tile = value;
+                Location = tile.Location;
+            }
+        }
         public Action<ICreature> NextAction { get; protected set; }
         public uint HealthPoints { get; protected set; }
         public uint MaxHealthPoints { get; protected set; }
@@ -59,10 +76,9 @@ namespace NeoServer.Game.Creatures.Model
         public ushort CorpseType => CreatureType.Look[LookType.Corpse];
         public IThing Corpse { get; set; }
         public virtual BloodType Blood => BloodType.Blood;
-
+        public virtual bool CanBeSeen => true;
         public abstract IOutfit Outfit { get; protected set; }
         public IOutfit OldOutfit { get; private set; }
-
         public Direction Direction { get; protected set; }
         public IDictionary<ConditionType, ICondition> Conditions { get; set; } = new Dictionary<ConditionType, ICondition>();
         public Direction ClientSafeDirection
@@ -92,6 +108,7 @@ namespace NeoServer.Game.Creatures.Model
         {
             OldOutfit = null;
             Outfit.Change(lookType, id, head, body, legs, feet, addon);
+
             OnChangedOutfit?.Invoke(this, Outfit);
         }
         public void SetTemporaryOutfit(ushort lookType, ushort id, byte head, byte body, byte legs, byte feet, byte addon)
@@ -100,7 +117,7 @@ namespace NeoServer.Game.Creatures.Model
             Outfit.Change(lookType, id, head, body, legs, feet, addon);
             OnChangedOutfit?.Invoke(this, Outfit);
         }
-      
+
         public void DisableTemporaryOutfit()
         {
             Outfit = OldOutfit;
@@ -111,7 +128,7 @@ namespace NeoServer.Game.Creatures.Model
         public byte LightColor { get; protected set; }
         public uint Flags { get; private set; }
         public bool IsInvisible { get; protected set; } // TODO: implement.
-        public bool CanSeeInvisible { get; } // TODO: implement.
+        public virtual bool CanSeeInvisible { get; }
 
         public HashSet<uint> Hostiles { get; }
 
@@ -133,11 +150,11 @@ namespace NeoServer.Game.Creatures.Model
         public void SetAsRemoved() => IsRemoved = true;
         public bool CanSee(Location pos, int viewPortX, int viewPortY)
         {
-            if (Location.Z <= 7)
+            if (Location.IsSurface || Location.IsAboveSurface)
             {
-                if (pos.Z > 7) return false;
+                if (pos.IsUnderground) return false;
             }
-            else if (Location.Z >= 8)
+            else if (Location.IsUnderground)
             {
                 if (Math.Abs(Location.Z - pos.Z) > 2) return false;
             }
@@ -153,6 +170,18 @@ namespace NeoServer.Game.Creatures.Model
             return false;
         }
 
+        public virtual void OnCreatureAppear(Location location, ICylinderSpectator[] spectators)
+        {
+            foreach (var cylinder in spectators)
+            {
+                var spectator = cylinder.Spectator;
+                if (this == (Creature)spectator) continue;
+
+                if (spectator is ICombatActor actor) actor.SetAsEnemy(this);
+                if (this is ICombatActor a) a.SetAsEnemy(spectator);
+            }
+        }
+
         protected void ExecuteNextAction(ICreature creature)
         {
             NextAction?.Invoke(creature);
@@ -160,35 +189,29 @@ namespace NeoServer.Game.Creatures.Model
         }
         public bool CanSee(Location pos)
         {
-            if (Location.Z <= 7)
+            var viewPortX = 9;
+            var viewPortY = 7;
+
+            if (Location.IsSurface || Location.IsAboveSurface)
             {
-                // we are on ground level or above (7 -> 0)
-                // view is from 7 -> 0
-                if (pos.Z > 7)
-                {
-                    return false;
-                }
+                if (pos.IsUnderground) return false;
             }
-            else if (Location.Z >= 8)
+            else if (Location.IsUnderground)
             {
-                // we are underground (8 -> 15)
-                // view is +/- 2 from the floor we stand on
-                if (Math.Abs(Location.Z - pos.Z) > 2)
-                {
-                    return false;
-                }
+                if (Math.Abs(Location.Z - pos.Z) > 2) return false;
             }
 
             var offsetZ = Location.Z - pos.Z;
 
-            if ((pos.X >= Location.X - 8 + offsetZ) && (pos.X <= Location.X + 9 + offsetZ) &&
-                (pos.Y >= Location.Y - 6 + offsetZ) && (pos.Y <= Location.Y + 7 + offsetZ))
+            if (pos.X >= Location.X - (viewPortX - 1) + offsetZ && pos.X <= Location.X + viewPortX + offsetZ &&
+                pos.Y >= Location.Y - (viewPortY - 1) + offsetZ && pos.Y <= Location.Y + viewPortY + offsetZ)
             {
                 return true;
             }
 
             return false;
         }
+
 
         public byte Skull { get; protected set; } // TODO: implement.
 
@@ -245,9 +268,7 @@ namespace NeoServer.Game.Creatures.Model
             return this == other;
         }
 
-        public void OnMoved()
-        {
-        }
+        public void OnMoved() { }
 
         public static bool operator ==(Creature creature1, Creature creature2) => creature1.CreatureId == creature2.CreatureId;
         public static bool operator !=(Creature creature1, Creature creature2) => creature1.CreatureId != creature2.CreatureId;

@@ -1,10 +1,9 @@
-﻿using NeoServer.Game.Contracts.Creatures;
-using NeoServer.Server.Model.Players.Contracts;
+﻿using NeoServer.Server.Model.Players.Contracts;
 
 namespace NeoServer.Game.Creatures
 {
     public interface IPlayerFactory
     {
-        IPlayer Create(IPlayerModel player);
+        IPlayer Create(IPlayer player);
     }
 }

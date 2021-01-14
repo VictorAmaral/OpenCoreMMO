@@ -1,6 +1,7 @@
-﻿using NeoServer.Game.Contracts.Creatures;
-using NeoServer.Game.Contracts.Items;
+﻿using NeoServer.Enums.Creatures.Enums;
 using NeoServer.Game.Common.Location.Structs;
+using NeoServer.Game.Contracts.Creatures;
+using NeoServer.Game.Contracts.Items;
 using NeoServer.Server.Model.Players.Contracts;
 
 namespace NeoServer.Game.Contracts.World
@@ -15,7 +16,7 @@ namespace NeoServer.Game.Contracts.World
         /// <returns></returns>
         public bool IsNextTo(ITile dest) => Location.IsNextTo(dest.Location);
         bool TryGetStackPositionOfThing(IPlayer player, IThing thing, out byte stackPosition);
-        byte GetCreatureStackPositionCount(IPlayer observer);
+        byte GetCreatureStackPositionIndex(IPlayer observer);
 
         IItem TopItemOnStack { get; }
         ICreature TopCreatureOnStack { get; }

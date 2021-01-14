@@ -1,14 +1,13 @@
 ﻿using NeoServer.Game.Combat.Attacks;
+using NeoServer.Game.Common.Creatures.Players;
+using NeoServer.Game.Common.Parsers;
 using NeoServer.Game.Contracts.Combat.Attacks;
 using NeoServer.Game.Creatures.Combat.Attacks;
-using NeoServer.Game.Common.Creatures.Players;
 using NeoServer.Server.Helpers.Extensions;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Newtonsoft.Json;
-using NeoServer.Game.Common.Parsers;
 
 namespace NeoServer.Loaders.Monsters.Converters
 {
@@ -43,12 +42,12 @@ namespace NeoServer.Loaders.Monsters.Converters
 
                 var combatAttack = new MonsterCombatAttack()
                 {
-                    Chance = chance > 100 || chance <= 0 ? (byte)100 : chance,
+                    Chance = chance > 100 || chance <= 0 ? 100 : chance,
                     Interval = interval,
                     MaxDamage = (ushort)Math.Abs(max),
                     MinDamage = (ushort)Math.Abs(min),
                     Target = target,
-                    DamageType = MonsterAttributeParser.ParseDamageType(attackName),
+                    DamageType = DamageTypeParser.Parse(attackName),
                 };
 
                 if (combatAttack.IsMelee)
@@ -97,17 +96,17 @@ namespace NeoServer.Loaders.Monsters.Converters
                 if (range > 1 || radius == 1)
                 {
                     if (areaEffect != null)
-                        combatAttack.DamageType = MonsterAttributeParser.ParseDamageType(areaEffect);
+                        combatAttack.DamageType = DamageTypeParser.Parse(areaEffect);
                     combatAttack.CombatAttack = new DistanceCombatAttack(range, ShootTypeParser.Parse(shootEffect));
                 }
                 if (radius > 1)
                 {
-                    combatAttack.DamageType = MonsterAttributeParser.ParseDamageType(areaEffect);
+                    combatAttack.DamageType = DamageTypeParser.Parse(areaEffect);
                     combatAttack.CombatAttack = new DistanceAreaCombatAttack(range, radius, ShootTypeParser.Parse(shootEffect));
                 }
                 if (length > 0)
                 {
-                    combatAttack.DamageType = MonsterAttributeParser.ParseDamageType(areaEffect);
+                    combatAttack.DamageType = DamageTypeParser.Parse(areaEffect);
                     combatAttack.CombatAttack = new SpreadCombatAttack(length, spread);
                 }
 

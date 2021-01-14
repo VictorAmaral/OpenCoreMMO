@@ -1,7 +1,7 @@
-using NeoServer.Game.Contracts;
-using NeoServer.Game.Contracts.Items;
 using NeoServer.Game.Common.Location;
 using NeoServer.Game.Common.Location.Structs;
+using NeoServer.Game.Contracts;
+using NeoServer.Game.Contracts.Items;
 using NeoServer.Server.Contracts.Network;
 using System.Linq;
 
@@ -99,7 +99,6 @@ namespace NeoServer.Networking.Packets.Outgoing
                     width = 18;
                     break;
             }
-
             return
                 map.GetDescription(thing, newLocation.X,
                 newLocation.Y,

@@ -1,20 +1,18 @@
-﻿using NeoServer.Game.Contracts.Combat;
-using NeoServer.Game.Contracts.Items;
-using NeoServer.Game.Contracts.Spells;
-using NeoServer.Game.Creatures.Enums;
-using NeoServer.Game.Common.Combat;
+﻿using NeoServer.Game.Common.Combat;
 using NeoServer.Game.Common.Combat.Structs;
 using NeoServer.Game.Common.Location.Structs;
-using NeoServer.Server.Model.Players.Contracts;
-using System;
+using NeoServer.Game.Contracts.Items;
+using NeoServer.Game.Contracts.Items.Types.Useables;
+using NeoServer.Game.Contracts.Spells;
+using NeoServer.Game.Creatures.Enums;
 
 namespace NeoServer.Game.Contracts.Creatures
 {
     public delegate void OnAttackTargetChange(ICombatActor actor, uint oldTargetId, uint newTargetId);
-    public delegate void Damage(ICombatActor enemy, ICombatActor victim, CombatDamage damage);
+    public delegate void Damage(IThing enemy, ICombatActor victim, CombatDamage damage);
     public delegate void StopAttack(ICombatActor actor);
     public delegate void BlockAttack(ICombatActor creature, BlockType block);
-    public delegate void Attack(ICombatActor creature, ICombatActor victim, CombatAttackType combat);
+    public delegate void Attack(ICombatActor creature, ICreature victim, CombatAttackType combat);
     public delegate void UseSpell(ICreature creature, ISpell spell);
     public delegate void ChangeVisibility(ICombatActor actor);
     public delegate void OnPropagateAttack(ICombatActor actor, CombatDamage damage, Coordinate[] area);
@@ -42,6 +40,7 @@ namespace NeoServer.Game.Contracts.Creatures
         ushort MinimumAttackPower { get; }
         bool UsingDistanceWeapon { get; }
         uint AttackEvent { get; set; }
+        bool CanBeAttacked { get; }
 
         int ArmorDefend(int attack);
         //bool Attack(ICombatActor enemy, ICombatAttack combatAttack);
@@ -63,9 +62,14 @@ namespace NeoServer.Game.Contracts.Creatures
         /// <param name="enemy"></param>
         /// <param name="damage"></param>
         /// <returns>Returns true when damage was bigger than 0</returns>
-        bool ReceiveAttack(ICombatActor enemy, CombatDamage damage);
+        bool ReceiveAttack(IThing enemy, CombatDamage damage);
         bool Attack(ICreature creature);
-        void SetAsInFight();
         void PropagateAttack(Coordinate[] area, CombatDamage damage);
+        bool Attack(ICreature creature, IUseableAttackOnCreature item);
+        /// <summary>
+        /// Set creature as enemy. If monster can't see creature it will be forgotten
+        /// </summary>
+        /// <param name="creature"></param>
+        void SetAsEnemy(ICreature actor);
     }
 }

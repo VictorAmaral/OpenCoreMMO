@@ -1,14 +1,13 @@
-﻿using NeoServer.Game.Contracts.Items;
+﻿using NeoServer.Game.Common;
 using NeoServer.Game.Common.Location;
 using NeoServer.Game.Common.Location.Structs;
 using NeoServer.Game.Common.Location.Structs.Helpers;
+using NeoServer.Game.Contracts.Creatures;
+using NeoServer.Game.Contracts.Items;
 using NeoServer.Server.Model.Players.Contracts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using NeoServer.Game.Contracts.Creatures;
-using NeoServer.Game.Common;
-using NeoServer.Game.Contracts.World.Tiles;
 
 namespace NeoServer.Game.World.Map.Tiles
 {
@@ -17,7 +16,6 @@ namespace NeoServer.Game.World.Map.Tiles
         public StaticTile(Coordinate coordinate, params IItem[] items)
         {
             Location = new Location((ushort)coordinate.X, (ushort)coordinate.Y, (byte)coordinate.Z);
-            Raw = null;
             Raw = GetRaw(items);
         }
 
@@ -76,18 +74,18 @@ namespace NeoServer.Game.World.Map.Tiles
             stackPosition = default;
             return false;
         }
-        public override byte GetCreatureStackPositionCount(IPlayer observer) => 0;
+        public override byte GetCreatureStackPositionIndex(IPlayer observer) => 0;
 
         #region Store Methods
-        public override Result CanAddThing(IThing item, byte amount=1, byte? slot = null) => new Result(InvalidOperation.NotEnoughRoom);
-        public override bool CanRemoveItem(IThing item) => false;
-        public override int PossibleAmountToAdd(IThing item, byte? toPosition = null) => 0;
-        public override Result<OperationResult<IThing>> RemoveThing(IThing thing, byte amount, byte fromPosition, out IThing removedThing)
+        public override Result CanAddItem(IItem item, byte amount=1, byte? slot = null) => new Result(InvalidOperation.NotEnoughRoom);
+        public override bool CanRemoveItem(IItem item) => false;
+        public override int PossibleAmountToAdd(IItem item, byte? toPosition = null) => 0;
+        public override Result<OperationResult<IItem>> RemoveItem(IItem thing, byte amount, byte fromPosition, out IItem removedThing)
         {
             removedThing = null;
-            return Result<OperationResult<IThing>>.NotPossible;
+            return Result<OperationResult<IItem>>.NotPossible;
         }
-        public override Result<OperationResult<IThing>> AddThing(IThing thing, byte? position = null) => Result<OperationResult<IThing>>.NotPossible;
+        public override Result<OperationResult<IItem>> AddItem(IItem thing, byte? position = null) => Result<OperationResult<IItem>>.NotPossible;
         #endregion
 
     }

@@ -2,7 +2,6 @@
 using NeoServer.Game.Contracts.Creatures;
 using NeoServer.Networking.Packets.Outgoing;
 using NeoServer.Server.Contracts.Network;
-using NeoServer.Server.Model.Players.Contracts;
 
 namespace NeoServer.Server.Events.Creature
 {
@@ -20,6 +19,8 @@ namespace NeoServer.Server.Events.Creature
         {
             foreach (var spectator in map.GetPlayersAtPositionZone(creature.Location))
             {
+                if (!creature.CanSee(spectator.Location)) continue;
+
                 if (!game.CreatureManager.GetPlayerConnection(spectator.CreatureId, out IConnection connection))
                 {
                     continue;

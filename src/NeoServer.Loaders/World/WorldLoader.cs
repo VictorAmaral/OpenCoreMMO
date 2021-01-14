@@ -1,20 +1,20 @@
-using NeoServer.Game.Contracts.Items;
 using NeoServer.Game.Common;
 using NeoServer.Game.Common.Location;
 using NeoServer.Game.Common.Location.Structs;
+using NeoServer.Game.Contracts;
+using NeoServer.Game.Contracts.Items;
 using NeoServer.Game.World.Map;
 using NeoServer.Game.World.Map.Tiles;
 using NeoServer.OTB.Enums;
 using NeoServer.OTB.Parsers;
 using NeoServer.OTBM;
 using NeoServer.OTBM.Structure;
+using NeoServer.Server.Standalone;
 using Serilog.Core;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using NeoServer.Server.Standalone;
-using NeoServer.Game.Contracts;
 
 namespace NeoServer.Loaders.World
 {
@@ -34,7 +34,7 @@ namespace NeoServer.Loaders.World
         }
         public void Load()
         {
-            var fileStream = File.ReadAllBytes($"./data/world/{serverConfiguration.OTBM}");
+            var fileStream = File.ReadAllBytes($"{serverConfiguration.Data}/world/{ serverConfiguration.OTBM}");
 
             var otbmNode = OTBBinaryTreeBuilder.Deserialize(fileStream);
 
@@ -60,14 +60,14 @@ namespace NeoServer.Loaders.World
                 });
             }
 
-            logger.Information($"{world.LoadedTilesCount} tiles, {world.LoadedTownsCount} towns and {world.LoadedWaypointsCount} waypoints loaded");
+            logger.Information("{tiles} tiles, {towns} towns and {waypoints} waypoints loaded", world.LoadedTilesCount, world.LoadedTownsCount, world.LoadedWaypointsCount);
 
         }
 
         private void LoadTiles(OTBM.Structure.OTBM otbm)
         {
-            otbm.TileAreas.AsParallel().SelectMany(t => t.Tiles)
-                .ForAll(tileNode =>
+            otbm.TileAreas.SelectMany(t => t.Tiles)
+                .ToList().ForEach(tileNode =>
                 {
 
                     var items = GetItemsOnTile(tileNode).ToArray();

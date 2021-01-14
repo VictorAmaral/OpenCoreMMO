@@ -1,10 +1,8 @@
-﻿using NeoServer.Game.Contracts.Creatures;
-using NeoServer.Game.Contracts.Items;
-using NeoServer.Game.Common;
+﻿using NeoServer.Enums.Creatures.Enums;
 using NeoServer.Game.Common.Location;
-using NeoServer.Game.Common.Location.Structs;
+using NeoServer.Game.Contracts.Creatures;
+using NeoServer.Game.Contracts.Items;
 using NeoServer.Server.Model.Players.Contracts;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 
 namespace NeoServer.Game.Contracts.World.Tiles
@@ -27,7 +25,7 @@ namespace NeoServer.Game.Contracts.World.Tiles
         byte[] GetRaw(IPlayer playerRequesting = null);
         ICreature GetTopVisibleCreature(ICreature creature);
         bool TryGetStackPositionOfItem(IItem item, out byte stackPosition);
-        byte GetCreatureStackPositionCount(IPlayer observer);
+        byte GetCreatureStackPositionIndex(IPlayer observer);
 
         bool HasBlockPathFinding { get; }
     }

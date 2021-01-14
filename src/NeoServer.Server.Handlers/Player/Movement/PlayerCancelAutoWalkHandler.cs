@@ -1,6 +1,4 @@
 ﻿using NeoServer.Game.Contracts;
-using NeoServer.Game.Contracts.Creatures;
-using NeoServer.Networking.Packets.Incoming;
 using NeoServer.Server.Contracts.Network;
 using NeoServer.Server.Model.Players.Contracts;
 using NeoServer.Server.Tasks;
@@ -20,11 +18,9 @@ namespace NeoServer.Server.Handlers.Players
 
         public override void HandlerMessage(IReadOnlyNetworkMessage message, IConnection connection)
         {
-            var autoWalk = new AutoWalkPacket(message);
-
             if (game.CreatureManager.TryGetPlayer(connection.PlayerId, out IPlayer player))
             {
-                game.Dispatcher.AddEvent(new Event(player.StopWalking));
+                game.Dispatcher.AddEvent(new Event(player.CancelWalk));
             }
         }
     }

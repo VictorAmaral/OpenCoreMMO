@@ -1,5 +1,4 @@
 ﻿using NeoServer.Game.Common.Location;
-using NeoServer.Game.Contracts;
 using NeoServer.Game.Contracts.Items.Types;
 using NeoServer.Networking.Packets.Incoming;
 using NeoServer.Server.Model.Players.Contracts;
@@ -16,7 +15,7 @@ namespace NeoServer.Server.Commands.Movement
 
             if (player.Inventory[itemThrow.FromLocation.Slot] is not IPickupable item) return;
 
-            player.MoveThing(player.Inventory, container, item, itemThrow.Count, (byte)itemThrow.FromLocation.Slot, (byte) itemThrow.ToLocation.ContainerSlot);
+            player.MoveItem(player.Inventory, container, item, itemThrow.Count, (byte)itemThrow.FromLocation.Slot, (byte) itemThrow.ToLocation.ContainerSlot);
         }
 
         public static bool IsApplicable(ItemThrowPacket itemThrowPacket) =>

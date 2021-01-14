@@ -1,6 +1,6 @@
-﻿using NeoServer.Game.Contracts;
+﻿using NeoServer.Game.Common.Location.Structs;
+using NeoServer.Game.Contracts;
 using NeoServer.Game.Contracts.Creatures;
-using NeoServer.Game.Common.Location.Structs;
 
 namespace NeoServer.Server.Events.Creature
 {
@@ -16,7 +16,7 @@ namespace NeoServer.Server.Events.Creature
         }
         public void Execute(IMonster creature, Location location)
         {
-            map.AddCreature(creature);
+            map.PlaceCreature(creature);
         }
     }
 }

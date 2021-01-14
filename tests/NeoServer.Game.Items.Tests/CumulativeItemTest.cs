@@ -1,5 +1,5 @@
-﻿using NeoServer.Game.Contracts.Items.Types;
-using NeoServer.Game.Common.Location.Structs;
+﻿using NeoServer.Game.Common.Location.Structs;
+using NeoServer.Game.Contracts.Items.Types;
 using NeoServer.Game.Items.Items;
 using Xunit;
 
@@ -97,5 +97,6 @@ namespace NeoServer.Game.Items.Tests
             var sup = new Cumulative(type, new Location(100, 100, 7), amount);
             Assert.Equal(totalWeight, sup.Weight);
         }
+
     }
 }

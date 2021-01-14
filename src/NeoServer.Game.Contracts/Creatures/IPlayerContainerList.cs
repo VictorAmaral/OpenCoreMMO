@@ -1,7 +1,7 @@
-﻿using NeoServer.Game.Contracts.Items;
-using NeoServer.Game.Common.Location.Structs;
-using NeoServer.Server.Model.Players.Contracts;
+﻿using NeoServer.Game.Common.Location.Structs;
+using NeoServer.Game.Contracts.Items;
 using NeoServer.Game.Contracts.Items.Types;
+using NeoServer.Server.Model.Players.Contracts;
 
 namespace NeoServer.Game.Contracts.Creatures
 {
@@ -21,6 +21,7 @@ namespace NeoServer.Game.Contracts.Creatures
         event ClosedContainer OnClosedContainer;
         event OpenedContainer OnOpenedContainer;
 
+        void CloseAll();
         void CloseContainer(byte containerId);
         void CloseDistantContainers();
         void GoBackContainer(byte containerId);

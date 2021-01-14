@@ -6,9 +6,6 @@ using NeoServer.Game.Contracts.Items.Types;
 using NeoServer.Server.Model.Players.Contracts;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace NeoServer.Game.Items.Items.UsableItems
 {
@@ -18,13 +15,17 @@ namespace NeoServer.Game.Items.Items.UsableItems
         {
         }
 
-        public void Use(ICreature creature)
+        public event Use OnUsed;
+
+        public void Use(IPlayer usedBy, ICreature creature)
         {
             if (creature is not IPlayer player) return;
 
             if (!player.Feed(this)) return;
 
             Reduce(1);
+
+            OnUsed?.Invoke(usedBy, creature, this);
         }
         public static new bool IsApplicable(IItemType type) => type.Attributes.GetAttribute(ItemAttribute.Type) == "food" && Cumulative.IsApplicable(type);
 

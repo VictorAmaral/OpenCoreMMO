@@ -1,21 +1,20 @@
-﻿using NeoServer.Game.Contracts.Creatures;
+﻿using NeoServer.Game.Common;
+using NeoServer.Game.Common.Location.Structs;
+using NeoServer.Game.Common.Players;
+using NeoServer.Game.Contracts;
+using NeoServer.Game.Contracts.Bases;
+using NeoServer.Game.Contracts.Creatures;
 using NeoServer.Game.Contracts.Items;
 using NeoServer.Game.Contracts.Items.Types;
 using NeoServer.Game.Contracts.Items.Types.Body;
-using NeoServer.Game.Common;
-using NeoServer.Game.Common.Players;
+using NeoServer.Game.Contracts.Items.Types.Containers;
 using NeoServer.Server.Model.Players.Contracts;
 using System;
 using System.Collections.Generic;
-using NeoServer.Game.Contracts.Items.Types.Containers;
-using NeoServer.Game.Common.Location.Structs;
-using NeoServer.Game.Contracts.World.Tiles;
-using NeoServer.Game.Contracts;
-using NeoServer.Game.World.Map.Tiles;
 
 namespace NeoServer.Server.Model.Players
 {
-    public class PlayerInventory : IInventory
+    public class PlayerInventory : Store, IInventory
     {
 
         public event AddItemToSlot OnItemAddedToSlot;
@@ -192,7 +191,7 @@ namespace NeoServer.Server.Model.Players
             {
                 if (Inventory.ContainsKey(Slot.Backpack))
                 {
-                    return new Result<IPickupable>(null, (Inventory[slot].Item1 as IPickupableContainer).AddThing(item).Error);
+                    return new Result<IPickupable>(null, (Inventory[slot].Item1 as IPickupableContainer).AddItem(item).Error);
                 }
                 else if (item is IPickupableContainer container)
                 {
@@ -363,7 +362,7 @@ namespace NeoServer.Server.Model.Players
         }
 
         #region Store Methods
-        public Result CanAddThing(IThing thing,byte amount = 1, byte? slot = null)
+        public override Result CanAddItem(IItem thing,byte amount = 1, byte? slot = null)
         {
             if (thing is not IPickupable item) return Result.NotPossible;
             if (!CanCarryItem(item, (Slot)slot, amount)) return new Result(InvalidOperation.TooHeavy);
@@ -371,10 +370,9 @@ namespace NeoServer.Server.Model.Players
             return CanAddItemToSlot((Slot)slot, item).ResultValue;
         }
 
-        public int PossibleAmountToAdd(IThing thing, byte? toPosition = null)
+        public override int PossibleAmountToAdd(IItem item, byte? toPosition = null)
         {
             if (toPosition is null) return 0;
-            if (thing is not IItem item) return 0;
 
             var slot = (Slot)toPosition;
 
@@ -386,42 +384,40 @@ namespace NeoServer.Server.Model.Players
 
             if (slot != Slot.Left && slot != Slot.Ammo) return 1;
 
-            if (thing is not ICumulative) return 1;
-            if (thing is ICumulative c1 && this[slot] is IItem i  && c1.ClientId != i.ClientId) return 100;
-            if (thing is ICumulative && this[slot] is null) return 100;
-            if (thing is ICumulative cumulative) return 100 - this[slot].Amount;
+            if (item is not ICumulative) return 1;
+            if (item is ICumulative c1 && this[slot] is IItem i  && c1.ClientId != i.ClientId) return 100;
+            if (item is ICumulative && this[slot] is null) return 100;
+            if (item is ICumulative cumulative) return 100 - this[slot].Amount;
 
             return 0;
         }
 
-        public bool CanRemoveItem(IThing item) => true;
+        public override bool CanRemoveItem(IItem item) => true;
 
-        public Result<OperationResult<IThing>> AddThing(IThing thing, byte? position = null)
+        public override Result<OperationResult<IItem>> AddItem(IItem thing, byte? position = null)
         {
-            if (thing is not IPickupable item) return Result<OperationResult<IThing>>.NotPossible;
+            if (thing is not IPickupable item) return Result<OperationResult<IItem>>.NotPossible;
 
             var swappedItem = TryAddItemToSlot((Slot)position, item);
 
-            if (swappedItem.Value is null) return Result<OperationResult<IThing>>.Success;
+            if (swappedItem.Value is null) return Result<OperationResult<IItem>>.Success;
 
-            return new(new OperationResult<IThing>(Operation.Removed, swappedItem.Value));
+            return new(new OperationResult<IItem>(Operation.Removed, swappedItem.Value));
         }
 
-        public Result<OperationResult<IThing>> RemoveThing(IThing thing, byte amount, byte fromPosition, out IThing removedThing)
+        public override Result<OperationResult<IItem>> RemoveItem(IItem thing, byte amount, byte fromPosition, out IItem removedThing)
         {
             removedThing = null;
-            if (!RemoveItemFromSlot((Slot)fromPosition, amount, out var removedItem)) return Result<OperationResult<IThing>>.NotPossible;
+            if (!RemoveItemFromSlot((Slot)fromPosition, amount, out var removedItem)) return Result<OperationResult<IItem>>.NotPossible;
 
             removedThing = removedItem;
             return new();
         }
-        public Result ReceiveFrom(IStore source, IThing thing, byte? toPosition)
+        public override Result<OperationResult<IItem>> ReceiveFrom(IStore source, IItem thing, byte? toPosition)
         {
-            var canAdd = CanAddThing(thing, thing.Amount, toPosition);
-            if (!canAdd.IsSuccess) return canAdd;
+            var result = base.ReceiveFrom(source, thing, toPosition);
 
-            var result = AddThing(thing, toPosition);
-            if (!(result.Value.HasAnyOperation)) return result.ResultValue;
+            if (!result.Value.HasAnyOperation) return result;
 
             foreach (var operation in result.Value.Operations)
             {
@@ -430,7 +426,8 @@ namespace NeoServer.Server.Model.Players
                     source.ReceiveFrom(this, operation.Item1, null);
                 }
             }
-            return result.ResultValue;
+
+            return result;
         }
         #endregion
     }

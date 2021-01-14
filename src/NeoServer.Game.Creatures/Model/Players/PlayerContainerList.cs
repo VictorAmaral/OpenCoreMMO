@@ -1,12 +1,12 @@
-﻿using NeoServer.Game.Contracts.Creatures;
-using NeoServer.Game.Contracts.Items.Types;
-using NeoServer.Game.Common.Location;
+﻿using NeoServer.Game.Common.Location;
 using NeoServer.Game.Common.Location.Structs;
 using NeoServer.Game.Common.Players;
+using NeoServer.Game.Contracts.Creatures;
+using NeoServer.Game.Contracts.Items.Types;
+using NeoServer.Game.Contracts.Items.Types.Containers;
 using NeoServer.Server.Model.Players.Contracts;
 using System.Collections.Generic;
 using System.Linq;
-using NeoServer.Game.Contracts.Items.Types.Containers;
 
 namespace NeoServer.Game.Creatures.Model.Players
 {
@@ -63,6 +63,15 @@ namespace NeoServer.Game.Creatures.Model.Players
             }
         }
 
+        public void CloseAll()
+        {
+            if (openedContainers.Count == 0) return;
+            foreach (var container in openedContainers.Values)
+            {
+                CloseContainer(container.Id);
+            }
+        }
+
         public IContainer this[byte id] => openedContainers.ContainsKey(id) ? openedContainers[id]?.Container : null;
 
         private Dictionary<byte, PlayerContainer> openedContainers = new Dictionary<byte, PlayerContainer>();
@@ -72,6 +81,12 @@ namespace NeoServer.Game.Creatures.Model.Players
             if (openedContainers.TryGetValue(containerId, out var playerContainer))
             {
                 var parentContainer = playerContainer.Container.Parent;
+
+                if (parentContainer is not IContainer)
+                {
+                    CloseContainer(containerId);
+                    return;
+                }
 
                 InsertOrOverrideOpenedContainer(containerId, new PlayerContainer(parentContainer as IContainer, player));
 
@@ -101,6 +116,7 @@ namespace NeoServer.Game.Creatures.Model.Players
                 playerContainer = new PlayerContainer(container, player);
             }
 
+
             var containerAlreadyOpened = openedContainers.Values.FirstOrDefault(v => v.Equals(playerContainer))?.Id;
             if (containerAlreadyOpened.HasValue) //if container is already opened
             {
@@ -111,8 +127,11 @@ namespace NeoServer.Game.Creatures.Model.Players
             InsertOrOverrideOpenedContainer(containerLevel, playerContainer);
 
             OnOpenedContainer?.Invoke(player, playerContainer.Id, playerContainer.Container);
+            playerContainer.Container.UpdateId(playerContainer.Id);
+
             return;
         }
+
 
         private void InsertOrOverrideOpenedContainer(byte containerLevel, PlayerContainer playerContainer)
         {
@@ -144,7 +163,7 @@ namespace NeoServer.Game.Creatures.Model.Players
                 return;
             }
 
-            var result = player.MoveThing(fromContainer.Container, toContainer.Container, item, amount, (byte)fromLocation.ContainerSlot, (byte)toLocation.ContainerSlot);
+            var result = player.MoveItem(fromContainer.Container, toContainer.Container, item, amount, (byte)fromLocation.ContainerSlot, (byte)toLocation.ContainerSlot);
             
             if (result.IsSuccess && item is IContainer container)
             {
@@ -158,6 +177,7 @@ namespace NeoServer.Game.Creatures.Model.Players
             {
                 playerContainer.DetachContainerEvents();
                 OnClosedContainer?.Invoke(player, containerId, playerContainer.Container);
+                playerContainer.Container.RemoveId();
             }
         }
     }

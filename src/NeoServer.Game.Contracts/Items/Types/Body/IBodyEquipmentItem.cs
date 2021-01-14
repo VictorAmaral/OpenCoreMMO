@@ -1,9 +1,7 @@
 ﻿using NeoServer.Game.Common;
 using NeoServer.Game.Common.Creatures;
 using NeoServer.Game.Common.Item;
-using NeoServer.Game.Common.Parsers;
 using NeoServer.Game.Common.Players;
-using NeoServer.Server.Model.Players.Contracts;
 using System.Collections.Immutable;
 using System.Text;
 
@@ -30,11 +28,11 @@ namespace NeoServer.Game.Contracts.Items.Types
 
                 for (int i = 0; i < Vocations?.Length; i++)
                 {
-                    stringBuilder.Append($"{VocationTypeParser.Parse(Vocations[i]).ToLower()}s");
-                    if (i + 1 < Vocations.Length)
-                    {
-                        stringBuilder.Append(", ");
-                    }
+                    //stringBuilder.Append($"{VocationTypeParser.Parse(Vocations[i]).ToLower()}s");
+                    //if (i + 1 < Vocations.Length)
+                    //{
+                    //    stringBuilder.Append(", ");
+                    //}
                 }
                 if (MinLevel > 0)
                 {

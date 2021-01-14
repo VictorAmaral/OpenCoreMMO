@@ -1,14 +1,11 @@
-﻿using NeoServer.Game.Contracts.Items;
+﻿using NeoServer.Enums.Creatures.Enums;
 using NeoServer.Game.Common;
 using NeoServer.Game.Common.Creatures;
 using NeoServer.Game.Common.Item;
 using NeoServer.Game.Common.Location;
+using NeoServer.Game.Contracts.Items;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using NeoServer.Enums.Creatures.Enums;
-using NeoServer.Game.Common.Players;
-using NeoServer.Game.Common.Parsers;
 
 namespace NeoServer.Game.Items
 {
@@ -16,11 +13,26 @@ namespace NeoServer.Game.Items
     public sealed class ItemAttributeList : IItemAttributeList
     {
         private IDictionary<ItemAttribute, (dynamic, IItemAttributeList)> _defaultAttributes;
-
+        private IDictionary<string, (dynamic, IItemAttributeList)> customAttributes;
+        private IDictionary<string, (dynamic, IItemAttributeList)> _customAttributes
+        {
+            get
+            {
+                customAttributes = customAttributes ?? new Dictionary<string, (dynamic, IItemAttributeList)>();
+                return customAttributes;
+            }
+        }
+      
         public ItemAttributeList()
         {
             _defaultAttributes = new Dictionary<ItemAttribute, (dynamic, IItemAttributeList)>();
         }
+        public void SetCustomAttribute(string attribute, int attributeValue) => _customAttributes[attribute] = (attributeValue, null);
+                                       
+        public void SetCustomAttribute(string attribute, IConvertible attributeValue) => _customAttributes[attribute] = (attributeValue, null);
+        public void SetCustomAttribute(string attribute, dynamic values) => _customAttributes[attribute] = (values, null);
+                                       
+        public void SetCustomAttribute(string attribute, IConvertible attributeValue, IItemAttributeList attrs) => _customAttributes[attribute] = (attributeValue, attrs);
 
         public void SetAttribute(ItemAttribute attribute, int attributeValue) => _defaultAttributes[attribute] = (attributeValue, null);
 
@@ -59,12 +71,48 @@ namespace NeoServer.Game.Items
 
             if (_defaultAttributes.TryGetValue(attribute, out var value))
             {
+                if (value.Item1 is not Array) return default;
+                return value.Item1;
+            }
+
+            return default;
+        }
+        public dynamic[] GetAttributeArray(string attribute)
+        {
+            if (_customAttributes is null) return default;
+
+            if (_customAttributes.TryGetValue(attribute, out var value))
+            {
+                if (value.Item1 is not Array) return default;
                 return value.Item1;
             }
 
             return default;
         }
 
+        public Dictionary<TKey, TValue> ToDictionary<TKey, TValue>()
+        {
+            if (_defaultAttributes is null && _customAttributes is null) return default;
+
+            var dictionary = new Dictionary<TKey, TValue>();
+
+            if (_defaultAttributes is not null)
+            {
+                foreach (var item in _defaultAttributes)
+                {
+                    dictionary.Add((TKey)Convert.ChangeType(item.Key, typeof(TKey)), (TValue)item.Value.Item1);
+                }
+            }
+            if (_customAttributes is not null)
+            {
+                foreach (var item in _customAttributes)
+                {
+
+                    dictionary.Add((TKey)Convert.ChangeType(item.Key, typeof(TKey)), (TValue)item.Value.Item1);
+                }
+            }
+            return dictionary;
+        }
         public IItemAttributeList GetInnerAttributes(ItemAttribute attribute)
         {
             if (_defaultAttributes is null) return default;
@@ -101,13 +149,13 @@ namespace NeoServer.Game.Items
             return FloorChangeDirection.None;
         }
 
-        public VocationType[] GetRequiredVocations()
+        public byte[] GetRequiredVocations()
         {
             if (_defaultAttributes is null) return default;
 
             if (_defaultAttributes.TryGetValue(ItemAttribute.Vocation, out var value))
             {
-                return (VocationType[])value.Item1;
+                return (byte[])value.Item1;
             }
 
             return default;

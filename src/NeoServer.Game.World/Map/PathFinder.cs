@@ -1,11 +1,10 @@
-﻿using NeoServer.Game.Contracts;
-using NeoServer.Game.Contracts.Creatures;
-using NeoServer.Game.Contracts.World;
+﻿using NeoServer.Game.Common.Helpers;
 using NeoServer.Game.Common.Location;
 using NeoServer.Game.Common.Location.Structs;
-using NeoServer.Server.Helpers.Extensions;
+using NeoServer.Game.Contracts;
+using NeoServer.Game.Contracts.Creatures;
+using NeoServer.Game.Contracts.World;
 using NeoServer.Game.Contracts.World.Tiles;
-using NeoServer.Server.Helpers;
 
 namespace NeoServer.Game.World.Map
 {
@@ -132,7 +131,7 @@ namespace NeoServer.Game.World.Map
 
             if (canGoIndex > 0)
             {
-                var randonIndex = ServerRandom.Random.Next(minValue: 0, maxValue: canGoIndex);
+                var randonIndex = GameRandom.Random.Next(minValue: 0, maxValue: canGoIndex);
                 directions = new Direction[] { canGoToDirections[randonIndex] };
                 return true;
             }

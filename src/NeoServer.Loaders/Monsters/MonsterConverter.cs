@@ -1,14 +1,11 @@
-﻿using NeoServer.Game.Contracts.Combat;
+﻿using NeoServer.Game.Common;
+using NeoServer.Game.Common.Creatures;
 using NeoServer.Game.Contracts.Creatures;
 using NeoServer.Game.Creatures.Model.Monsters;
-using NeoServer.Game.Common.Creatures;
-using NeoServer.Game.Common.Item;
-using System.Collections.Generic;
-using System.Linq;
-using NeoServer.Enums.Creatures.Enums;
 using NeoServer.Loaders.Monsters.Converters;
+using System.Collections.Generic;
 using System.Collections.Immutable;
-using NeoServer.Game.Common;
+using System.Linq;
 
 namespace NeoServer.Loaders.Monsters
 {
@@ -21,7 +18,8 @@ namespace NeoServer.Loaders.Monsters
             {
                 Name = data.Name,
                 MaxHealth = data.Health.Max,
-                Look = new Dictionary<LookType, ushort>() { { LookType.Type, data.Look.Type }, { LookType.Corpse, data.Look.Corpse } },
+                Look = new Dictionary<LookType, ushort>() { { LookType.Type, data.Look.Type }, { LookType.Corpse, data.Look.Corpse }, { LookType.Body, data.Look.Body}, { LookType.Legs, data.Look.Legs}, { LookType.Head, data.Look.Head },
+                { LookType.Feet, data.Look.Feet},{ LookType.Addon, data.Look.Addons}},
                 Speed = data.Speed,
                 Armor = ushort.Parse(data.Defense.Armor),
                 Defense = ushort.Parse(data.Defense.Defense),

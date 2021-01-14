@@ -1,9 +1,6 @@
-﻿using NeoServer.Game.Contracts.Creatures;
-using NeoServer.Game.Common.Location.Structs;
+﻿using NeoServer.Game.Common.Location.Structs;
+using NeoServer.Game.Contracts.Creatures;
 using NeoServer.Server.Tasks;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace NeoServer.Server.Events.Creature
 {
@@ -15,19 +12,18 @@ namespace NeoServer.Server.Events.Creature
         {
             this.game = game;
         }
-        public void Execute(IWalkableCreature creature, IWalkableCreature following, FindPathParams fpp)
+        public void Execute(IWalkableCreature creature, ICreature following, FindPathParams fpp)
         {
             if(creature.FollowEvent != 0)
             {
                 return;
             }
 
-            Follow(creature, following, fpp);
-
-            creature.FollowEvent = game.Scheduler.AddEvent(new SchedulerEvent(1000, () => Follow(creature, following, fpp)));
+            var interval = creature.FirstStep ? 0 : 1000;
+            creature.FollowEvent = game.Scheduler.AddEvent(new SchedulerEvent(interval, () => Follow(creature, following, fpp)));
         }
 
-        private void Follow(IWalkableCreature creature, IWalkableCreature following, FindPathParams fpp)
+        private void Follow(IWalkableCreature creature, ICreature following, FindPathParams fpp)
         {
             if (creature.IsFollowing)
             {

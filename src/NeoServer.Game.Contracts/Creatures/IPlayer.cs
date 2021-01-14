@@ -1,17 +1,17 @@
-﻿using NeoServer.Game.Contracts.Creatures;
-using NeoServer.Game.Contracts.Spells;
-using NeoServer.Game.Common;
+﻿using NeoServer.Game.Common;
 using NeoServer.Game.Common.Creatures;
 using NeoServer.Game.Common.Location;
 using NeoServer.Game.Common.Location.Structs;
 using NeoServer.Game.Common.Players;
 using NeoServer.Game.Common.Talks;
-using System.Collections.Generic;
-using NeoServer.Game.Contracts.Items.Types;
-using NeoServer.Game.Contracts.Items;
-using NeoServer.Game.Contracts.World;
-using NeoServer.Game.Common.Parsers;
 using NeoServer.Game.Contracts;
+using NeoServer.Game.Contracts.Creatures;
+using NeoServer.Game.Contracts.Items;
+using NeoServer.Game.Contracts.Items.Types;
+using NeoServer.Game.Contracts.Items.Types.Useables;
+using NeoServer.Game.Contracts.Spells;
+using NeoServer.Game.Contracts.World;
+using System.Collections.Generic;
 
 namespace NeoServer.Server.Model.Players.Contracts
 {
@@ -24,7 +24,10 @@ namespace NeoServer.Server.Model.Players.Contracts
     public delegate void OperationFail(uint id, string message);
     public delegate void LookAt(IPlayer player, IThing thing, bool isClose);
     public delegate void PlayerGainSkillPoint(IPlayer player, SkillType type);
-    public delegate void UseItem(IPlayer player, ICreature creature, IConsumable consumable);
+    public delegate void UseItem(IPlayer player, IThing thing, IUseableOn item);
+    public delegate void LogIn(IPlayer player);
+    public delegate void LogOut(IPlayer player);
+    
     public interface IPlayer : ICombatActor
     {
         event UseSpell OnUsedSpell;
@@ -54,6 +57,10 @@ namespace NeoServer.Server.Model.Players.Contracts
         event LookAt OnLookedAt;
         event PlayerGainSkillPoint OnGainedSkillPoint;
         event UseItem OnUsedItem;
+        event ReduceMana OnStatusChanged;
+        event PlayerLevelAdvance OnLevelAdvanced;
+        event LogIn OnLoggedIn;
+        event LogOut OnLoggedOut;
 
         IInventory Inventory { get; }
         ushort Mana { get; }
@@ -62,7 +69,8 @@ namespace NeoServer.Server.Model.Players.Contracts
         bool CannotLogout { get; }
         uint Id { get; }
         bool HasDepotOpened { get; }
-        VocationType VocationType { get;  }
+
+        byte VocationType{ get; }
 
         //  IAction PendingAction { get; }
 
@@ -119,7 +127,7 @@ namespace NeoServer.Server.Model.Players.Contracts
         bool HasEnoughMana(ushort mana);
         void ConsumeMana(ushort mana);
         bool HasEnoughLevel(ushort level);
-        bool Logout();
+        bool Logout(bool forced = false);
         ushort CalculateAttackPower(float attackRate, ushort attack);
         void LookAt(ITile tile);
         void LookAt(byte containerId, sbyte containerSlot);
@@ -129,14 +137,19 @@ namespace NeoServer.Server.Model.Players.Contracts
         /// </summary>
         void Recover();
         void HealMana(ushort increasing);
-        void Use(IConsumable item, ICreature creature);
         bool Feed(IFood food);
-        Result MoveThing(IStore source, IStore destination, IThing thing, byte amount, byte fromPosition, byte? toPosition);
+        Result MoveItem(IStore source, IStore destination, IItem item, byte amount, byte fromPosition, byte? toPosition);
+        void Use(IUseableOn item, ITile tile);
+        void Use(IUseableOn item, ICreature onCreature);
+        void Use(IUseable item);
+        void Use(IUseableOn item, IItem onItem);
+        bool Login();
 
-        string IThing.InspectionText => $"{Name} (Level {Level}). He is a {VocationTypeParser.Parse(VocationType).ToLower()}{GuildText}";
+        string IThing.InspectionText => $"{Name} (Level {Level}). He is a {Vocation.Name.ToLower()}{GuildText}";
         private string GuildText => string.IsNullOrWhiteSpace(Guild) ? string.Empty : $". He is a member of {Guild}";
 
         uint TotalCapacity { get; }
         bool Recovering { get; }
+        IVocation Vocation { get; }
     }
 }

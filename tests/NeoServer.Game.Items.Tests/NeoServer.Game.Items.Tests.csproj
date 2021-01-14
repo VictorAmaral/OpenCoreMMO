@@ -7,6 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Items\UseableItems\**" />
+    <EmbeddedResource Remove="Items\UseableItems\**" />
+    <None Remove="Items\UseableItems\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="coverlet.msbuild" Version="2.9.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -26,10 +32,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\NeoServer.Game.Creatures\NeoServer.Game.Creatures.csproj" />
     <ProjectReference Include="..\..\src\NeoServer.Game.Items\NeoServer.Game.Items.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Items\UseableItems\" />
+    <ProjectReference Include="..\NeoServer.Game.Tests\NeoServer.Game.Tests.csproj" />
   </ItemGroup>
 
 </Project>

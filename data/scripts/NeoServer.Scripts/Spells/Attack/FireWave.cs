@@ -1,10 +1,9 @@
 ﻿using NeoServer.Enums.Creatures.Enums;
-using NeoServer.Game.Contracts.Creatures;
-using NeoServer.Game.Creatures.Spells;
+using NeoServer.Game.Combat.Spells;
+using NeoServer.Game.Common;
 using NeoServer.Game.Common.Creatures.Players;
+using NeoServer.Game.Contracts.Creatures;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace NeoServer.Scripts.Spells.Attack
 {
@@ -16,7 +15,7 @@ namespace NeoServer.Scripts.Spells.Attack
 
         public override ConditionType ConditionType => throw new NotImplementedException();
 
-        public override void OnCast(ICombatActor actor)
+        public override bool OnCast(ICombatActor actor, string words, out InvalidOperation error)
         {
             throw new NotImplementedException();
         }

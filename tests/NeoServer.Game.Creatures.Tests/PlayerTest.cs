@@ -1,15 +1,14 @@
-using NeoServer.Game.Contracts.Creatures;
-using NeoServer.Game.Contracts.Items.Types;
-using NeoServer.Game.Creature.Model;
 using NeoServer.Game.Common.Creatures;
 using NeoServer.Game.Common.Location.Structs;
 using NeoServer.Game.Common.Players;
-using NeoServer.Game.World.Map;
+using NeoServer.Game.Contracts.Creatures;
+using NeoServer.Game.Contracts.Items.Types;
+using NeoServer.Game.Creature.Model;
+using NeoServer.Game.Tests;
 using NeoServer.Server.Model.Players;
 using System;
 using System.Collections.Generic;
 using Xunit;
-using NeoServer.Game.Creatures.Monsters;
 
 namespace NeoServer.Game.Creatures.Tests
 {
@@ -23,7 +22,7 @@ namespace NeoServer.Game.Creatures.Tests
         [InlineData(94, 94, false)]
         public void CanMoveThing_Given_Distance_Bigger_Than_11_Returns_False(ushort toX, ushort toY, bool expected)
         {
-            var sut = new Player(1, "PlayerA", ChaseMode.Stand, 100, healthPoints: 100, maxHealthPoints: 100, vocation: VocationType.Knight, Gender.Male, online: true, mana: 30, maxMana: 30, fightMode: FightMode.Attack,
+            var sut = new Player(1, "PlayerA", ChaseMode.Stand, 100, healthPoints: 100, maxHealthPoints: 100, vocation: 1, Gender.Male, online: true, mana: 30, maxMana: 30, fightMode: FightMode.Attack,
                 soulPoints: 100, soulMax: 100, skills: new Dictionary<SkillType, ISkill>
                 {
                     { SkillType.Axe, new Skill(SkillType.Axe, 1.1f,10,0)  }

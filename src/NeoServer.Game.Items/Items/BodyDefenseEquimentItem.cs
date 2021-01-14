@@ -1,8 +1,8 @@
-﻿using NeoServer.Game.Contracts.Items;
-using NeoServer.Game.Contracts.Items.Types.Body;
-using NeoServer.Game.Common.Item;
+﻿using NeoServer.Game.Common.Item;
 using NeoServer.Game.Common.Location.Structs;
 using NeoServer.Game.Common.Players;
+using NeoServer.Game.Contracts.Items;
+using NeoServer.Game.Contracts.Items.Types.Body;
 using System.Collections.Immutable;
 
 namespace NeoServer.Game.Items.Items
@@ -22,9 +22,6 @@ namespace NeoServer.Game.Items.Items
 
         public Slot Slot => Metadata.WeaponType == WeaponType.Shield ? Slot.Right : Metadata.BodyPosition;
 
-        public VocationType[] Vocations => throw new System.NotImplementedException();
-
-        public ushort MinLevel => throw new System.NotImplementedException();
 
         public static bool IsApplicable(IItemType type) =>
             type.BodyPosition switch

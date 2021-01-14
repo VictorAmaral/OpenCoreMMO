@@ -1,5 +1,4 @@
-﻿using NeoServer.Game.Contracts;
-using NeoServer.Game.Contracts.Items;
+﻿using NeoServer.Game.Contracts.Items;
 using NeoServer.Game.Contracts.World;
 using NeoServer.Networking.Packets.Outgoing;
 using NeoServer.Server.Contracts.Network;
@@ -28,15 +27,10 @@ namespace NeoServer.Server.Events
 
             foreach (var spectator in spectators)
             {
-                if (!game.CreatureManager.GetPlayerConnection(spectator.Spectator.CreatureId, out IConnection connection))
-                {
-                    continue;
-                }
-                if(!(spectator.Spectator is IPlayer))
-                {
-                    continue;
-                }
-
+                if (!game.CreatureManager.GetPlayerConnection(spectator.Spectator.CreatureId, out IConnection connection)) continue;
+                
+                if (spectator.Spectator is not IPlayer) continue;
+                
                 connection.OutgoingPackets.Enqueue(new AddTileItemPacket((IItem)thing, spectator.ToStackPosition));
 
                 connection.Send();

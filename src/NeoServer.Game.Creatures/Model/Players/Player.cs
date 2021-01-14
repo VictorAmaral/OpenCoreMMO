@@ -1,37 +1,38 @@
-using NeoServer.Game.Contracts.Creatures;
-using NeoServer.Game.Contracts.Items;
-using NeoServer.Game.Contracts.Items.Types;
-using NeoServer.Game.Contracts.Items.Types.Body;
-using NeoServer.Game.Creatures.Enums;
-using NeoServer.Game.Creatures.Model;
-using NeoServer.Game.Creatures.Model.Bases;
-using NeoServer.Game.Creatures.Model.Players;
-using NeoServer.Game.Creatures.Spells;
+using NeoServer.Game.Common;
 using NeoServer.Game.Common.Combat.Structs;
+using NeoServer.Game.Common.Conditions;
 using NeoServer.Game.Common.Creatures;
+using NeoServer.Game.Common.Creatures.Players;
+using NeoServer.Game.Common.Helpers;
 using NeoServer.Game.Common.Item;
 using NeoServer.Game.Common.Location;
 using NeoServer.Game.Common.Location.Structs;
 using NeoServer.Game.Common.Players;
 using NeoServer.Game.Common.Talks;
-using NeoServer.Server.Helpers;
+using NeoServer.Game.Contracts;
+using NeoServer.Game.Contracts.Creatures;
+using NeoServer.Game.Contracts.Items;
+using NeoServer.Game.Contracts.Items.Types;
+using NeoServer.Game.Contracts.Items.Types.Body;
+using NeoServer.Game.Contracts.Items.Types.Useables;
+using NeoServer.Game.Contracts.World;
+using NeoServer.Game.Contracts.World.Tiles;
+using NeoServer.Game.Creatures.Enums;
+using NeoServer.Game.Creatures.Model;
+using NeoServer.Game.Creatures.Model.Bases;
+using NeoServer.Game.Creatures.Model.Players;
+using NeoServer.Game.Creatures.Spells;
+using NeoServer.Game.Creatures.Vocations;
 using NeoServer.Server.Model.Players.Contracts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using NeoServer.Game.Contracts.World;
-using NeoServer.Game.Contracts.World.Tiles;
-using NeoServer.Game.Common.Creatures.Players;
-using NeoServer.Game.Common.Conditions;
-using NeoServer.Game.Creatures.Vocations;
-using NeoServer.Game.Contracts;
-using NeoServer.Game.Common;
 
 namespace NeoServer.Server.Model.Players
 {
     public class Player : CombatActor, IPlayer
     {
-        public Player(uint id, string characterName, ChaseMode chaseMode, uint capacity, ushort healthPoints, ushort maxHealthPoints, VocationType vocation,
+        public Player(uint id, string characterName, ChaseMode chaseMode, uint capacity, ushort healthPoints, ushort maxHealthPoints, byte vocation,
             Gender gender, bool online, ushort mana, ushort maxMana, FightMode fightMode, byte soulPoints, byte soulMax, IDictionary<SkillType, ISkill> skills, ushort staminaMinutes,
             IOutfit outfit, IDictionary<Slot, Tuple<IPickupable, ushort>> inventory, ushort speed,
             Location location, IPathAccess pathAccess)
@@ -79,6 +80,9 @@ namespace NeoServer.Server.Model.Players
         public event LookAt OnLookedAt;
         public event UseSpell OnUsedSpell;
         public event UseItem OnUsedItem;
+        public event LogIn OnLoggedIn;
+        public event LogOut OnLoggedOut;
+
 
         public void OnLevelAdvance(SkillType type, int fromLevel, int toLevel)
         {
@@ -105,7 +109,7 @@ namespace NeoServer.Server.Model.Players
         public ChaseMode ChaseMode { get; private set; }
         public uint TotalCapacity { get; private set; }
         public ushort Level => Skills[SkillType.Level].Level;
-        public VocationType VocationType { get; private set; }
+        public byte VocationType { get; private set; }
         public Gender Gender { get; private set; }
         public bool Online { get; private set; }
         public ushort Mana { get; private set; }
@@ -206,14 +210,15 @@ namespace NeoServer.Server.Model.Players
 
         public string Guild { get; }
         public bool Recovering { get; private set; }
-        
+
         public byte GetSkillInfo(SkillType skill) => (byte)Skills[skill].Level;
         public byte GetSkillPercent(SkillType skill) => (byte)Skills[skill].Percentage;
         public bool KnowsCreatureWithId(uint creatureId) => KnownCreatures.ContainsKey(creatureId);
         public bool CanMoveThing(Location location) => Location.GetSqmDistance(location) <= MapConstants.MAX_DISTANCE_MOVE_THING;
 
+       
         public void AddKnownCreature(uint creatureId) => KnownCreatures.TryAdd(creatureId, DateTime.Now.Ticks);
-        const int KnownCreatureLimit = 250; // TODO: not sure of the number for this version... debugs will tell :|
+        const int KnownCreatureLimit = 250; //todo: for version 8.60
 
         public uint ChooseToRemoveFromKnownSet()
         {
@@ -241,14 +246,32 @@ namespace NeoServer.Server.Model.Players
 
         public void ChangeOutfit(IOutfit outfit) => Outfit = outfit;
 
-        public override void OnMoved(IDynamicTile fromTile, IDynamicTile toTile)
+        public override void OnMoved(IDynamicTile fromTile, IDynamicTile toTile, ICylinderSpectator [] spectators)
         {
             TogglePacifiedCondition(fromTile, toTile);
             Containers.CloseDistantContainers();
-            base.OnMoved(fromTile, toTile);
+            base.OnMoved(fromTile, toTile, spectators);
         }
-
-        public override void SetAsInFight()
+        public override bool CanSee(ICreature otherCreature)
+        {
+            return !otherCreature.IsInvisible || (otherCreature is IPlayer && otherCreature.CanBeSeen) || (CanSeeInvisible);
+        }
+        public override void TurnInvisible()
+        {
+            SetTemporaryOutfit(0, 0, 0, 0, 0, 0, 0);
+            base.TurnInvisible();
+        }
+        public override void TurnVisible()
+        {
+            DisableTemporaryOutfit();
+            base.TurnVisible();
+        }
+        public override void SetAsEnemy(ICreature creature)
+        {
+            if (creature is not IMonster) return;
+            SetAsInFight();
+        }
+        public void SetAsInFight()
         {
             if (IsPacified) return;
 
@@ -258,8 +281,6 @@ namespace NeoServer.Server.Model.Players
                 return;
             }
             AddCondition(new Condition(ConditionType.InFight, 60000));
-
-            base.SetAsInFight();
         }
 
         private void TogglePacifiedCondition(IDynamicTile fromTile, IDynamicTile toTile)
@@ -320,7 +341,7 @@ namespace NeoServer.Server.Model.Players
             {
                 var min = ArmorRating / 2;
                 var max = (ArmorRating / 2) * 2 - 1;
-                damage -= (ushort)ServerRandom.Random.NextInRange(min, max);
+                damage -= (ushort)GameRandom.Random.NextInRange(min, max);
             }
             else if (ArmorRating > 0)
             {
@@ -343,17 +364,18 @@ namespace NeoServer.Server.Model.Players
 
         public override void Say(string message, TalkType talkType)
         {
-            if (SpellList.Spells.TryGetValue(message.Trim(), out var spell))
+            if (SpellList.TryGet(message.Trim(), out var spell))
             {
-                if (!spell.Invoke(this, out var error))
+                if (!spell.Invoke(this, message, out var error))
                 {
                     OnCannotUseSpell?.Invoke(this, spell, error);
                     return;
                 }
-
+                talkType = TalkType.MonsterSay;
                 Cooldowns.Start(CooldownType.Spell, 1000); //todo: 1000 should be a const
-
+                if (!spell.ShouldSay) return;
             }
+
             base.Say(message, talkType);
         }
 
@@ -371,10 +393,9 @@ namespace NeoServer.Server.Model.Players
         public override IItem CreateItem(ushort itemId, byte amount)
         {
             var item = base.CreateItem(itemId, amount);
-            if (!Inventory.BackpackSlot.AddThing(item).IsSuccess)
+            if (!Inventory.BackpackSlot.AddItem(item).IsSuccess)
             {
-                var thing = item as IThing;
-                Tile.AddThing(thing);
+                Tile.AddItem(item);
             }
             return item;
         }
@@ -402,9 +423,9 @@ namespace NeoServer.Server.Model.Players
             return damage; //todo
         }
 
-        public bool Logout()
+        public bool Logout(bool forced = false)
         {
-            if (CannotLogout)
+            if (CannotLogout && forced == false)
             {
                 OnOperationFailed?.Invoke(CreatureId, "You may not logout during or immediately after a fight");
                 return false;
@@ -413,6 +434,20 @@ namespace NeoServer.Server.Model.Players
             StopAttack();
             StopFollowing();
             StopWalking();
+            Containers.CloseAll();
+
+            OnLoggedOut?.Invoke(this);
+            return true;
+        }
+        public bool Login()
+        {
+            StopAttack();
+            StopFollowing();
+            StopWalking();
+
+            KnownCreatures.Clear();
+
+            OnLoggedIn?.Invoke(this);
             return true;
         }
         public override bool CanBlock(DamageType damage)
@@ -451,30 +486,72 @@ namespace NeoServer.Server.Model.Players
             Cooldowns.Start(CooldownType.SoulRecovery, Vocation.GainSoulTicks * 1000);
         }
 
-        public override void OnDamage(ICombatActor enemy, CombatDamage damage)
+        public override void OnDamage(IThing enemy, CombatDamage damage)
         {
             if (damage.Type == DamageType.ManaDrain) ConsumeMana(damage.Damage);
             else
-                ReduceHealth(enemy, damage);
+                ReduceHealth(damage);
         }
-
-        public void Use(IConsumable item, ICreature creature)
+        public void Use(IUseable item)
         {
-            if (!item.CanBeUsed(this))
+            item.Use(this);
+        }
+        public void Use(IUseableOn item, ICreature onCreature)
+        {
+            if (item is IItemRequirement requirement && !requirement.CanBeUsed(this))
             {
-                OnOperationFailed?.Invoke(CreatureId, item.ValidationError);
+                OnOperationFailed?.Invoke(CreatureId, requirement.ValidationError);
+                return;
+            }
+            var result = false;
+
+            if (onCreature is ICombatActor enemy)
+            {
+                if (item is IUseableAttackOnCreature useableAttackOnCreature) result = Attack(enemy, useableAttackOnCreature);
+                else if (item is IUseableOnCreature useableOnCreature) { useableOnCreature.Use(this, onCreature); result = true; }
+                else if (item is IUseableOnTile useableOnTile) result = useableOnTile.Use(this, onCreature.Tile);
+            }
+
+            if(result) OnUsedItem?.Invoke(this, onCreature, item);
+        }
+        public void Use(IUseableOn item, IItem onItem)
+        {
+            if (item is IItemRequirement requirement && !requirement.CanBeUsed(this))
+            {
+                OnOperationFailed?.Invoke(CreatureId, requirement.ValidationError);
                 return;
             }
 
-            item.Use(creature);
-            OnUsedItem?.Invoke(this, creature, item);
+            if (item is not IUseableOnItem useableOnItem) return;
+
+            useableOnItem.Use(this, onItem);
+            OnUsedItem?.Invoke(this, onItem, item);
+        }
+        public void Use(IUseableOn item, ITile onTile)
+        {
+            if (item is IItemRequirement requirement && !requirement.CanBeUsed(this))
+            {
+                OnOperationFailed?.Invoke(CreatureId, requirement.ValidationError);
+                return;
+            }
+
+            if (onTile.TopItemOnStack is not IItem onItem) return;
+
+            var result = false;
+
+            if (item is IUseableAttackOnTile useableAttackOnTile) result = Attack(onTile, useableAttackOnTile);
+            else if (item is IUseableOnTile useableOnTile) result= useableOnTile.Use(this, onTile);
+            else if (item is IUseableOnItem useableOnItem) result= useableOnItem.Use(this, onItem);
+
+            if(result) OnUsedItem?.Invoke(this, onItem, item);
         }
         public bool Feed(IFood food)
         {
             if (food is null) return false;
 
-            var regenerationMs = (uint)food.Regeneration * 1000;
+            var regenerationMs = (uint)food.Duration * 1000;
             var maxRegenerationTime = (uint)1200 * 1000;
+
             if (Conditions.TryGetValue(ConditionType.Regeneration, out var condition))
             {
                 if (condition.RemainingTime + regenerationMs >= maxRegenerationTime) //todo: this number should be configurable
@@ -496,11 +573,21 @@ namespace NeoServer.Server.Model.Players
 
         public void OnHungry() => Recovering = false;
 
-        public Result MoveThing(IStore source, IStore destination, IThing thing, byte amount, byte fromPosition, byte? toPosition)
+        public Result MoveItem(IStore source, IStore destination, IItem thing, byte amount, byte fromPosition, byte? toPosition)
         {
+            if (thing is not IPickupable) return Result.NotPossible;
             if (thing.Location.Type == LocationType.Ground && !Location.IsNextTo(thing.Location)) return new Result(InvalidOperation.TooFar);
 
-            return source.SendTo(destination, thing, amount, fromPosition, toPosition);
+            return source.SendTo(destination, thing, amount, fromPosition, toPosition).ResultValue;
+        }
+
+        public override void SetAttackTarget(ICreature target)
+        {
+            base.SetAttackTarget(target);
+            if(target.CreatureId != 0 && ChaseMode == ChaseMode.Follow)
+            {
+                StartFollowing(target, PathSearchParams);
+            }
         }
     }
 }

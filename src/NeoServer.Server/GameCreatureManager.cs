@@ -1,8 +1,6 @@
 ﻿using NeoServer.Game.Contracts;
 using NeoServer.Game.Contracts.Creatures;
-using NeoServer.Game.Contracts.Items;
 using NeoServer.Server.Contracts.Network;
-using NeoServer.Server.Model.Players;
 using NeoServer.Server.Model.Players.Contracts;
 using System;
 using System.Collections.Concurrent;
@@ -20,8 +18,6 @@ namespace NeoServer.Server
 
         private ICreatureGameInstance creatureInstances;
 
-        private readonly Func<IPlayerModel, IPlayer> playerFactory;
-
         /// <summary>
         /// Gets all creatures in game
         /// </summary>
@@ -32,11 +28,10 @@ namespace NeoServer.Server
 
         private readonly ConcurrentDictionary<uint, IConnection> playersConnection;
         private IMap map;
-        public GameCreatureManager(ICreatureGameInstance creatureInstances, IMap map, Func<IPlayerModel, IPlayer> playerFactory)
+        public GameCreatureManager(ICreatureGameInstance creatureInstances, IMap map)
         {
             this.creatureInstances = creatureInstances;
             this.map = map;
-            this.playerFactory = playerFactory;
             playersConnection = new ConcurrentDictionary<uint, IConnection>();
         }
 
@@ -48,7 +43,7 @@ namespace NeoServer.Server
         public bool AddCreature(ICreature creature)
         {
             creatureInstances.Add(creature);
-            map.AddCreature(creature);
+            map.PlaceCreature(creature);
 
             return true;
         }
@@ -87,6 +82,7 @@ namespace NeoServer.Server
             }
             return false;
         }
+        public bool TryGetLoggedPlayer(uint playerId, out IPlayer player) => creatureInstances.TryGetPlayer(playerId, out player);
 
         /// <summary>
         /// Returns a creature by id
@@ -109,11 +105,9 @@ namespace NeoServer.Server
                 return false;
             }
 
-            var thing = creature as IThing;
-
             if (creature is IWalkableCreature walkableCreature)
             {
-                map.RemoveThing(thing, walkableCreature.Tile);
+                map.RemoveCreature(walkableCreature);
             }
 
             creatureInstances.TryRemove(creature.CreatureId);
@@ -127,18 +121,22 @@ namespace NeoServer.Server
         /// Adds player to game
         /// This methods also adds player to map and to connection pool
         /// </summary>
-        /// <param name="playerRecord"></param>
+        /// <param name="player"></param>
         /// <param name="connection"></param>
         /// <returns></returns>
-        public IPlayer AddPlayer(IPlayerModel playerRecord, IConnection connection)
+        public IPlayer AddPlayer(IPlayer player, IConnection connection)
         {
-            var player = playerFactory(playerRecord);
+            var playerIsLogged = creatureInstances.TryGetPlayer(player.Id, out var playerLogged);
+            player = playerLogged ?? player;
 
             connection.SetConnectionOwner(player);
 
-            playersConnection.TryAdd(player.CreatureId, connection);
+            playersConnection.AddOrUpdate(player.CreatureId, connection, (k, v) => connection);
+
+            if (playerIsLogged) return player;
 
             AddCreature(player);
+            creatureInstances.AddPlayer(player);
 
             return player;
         }
@@ -154,6 +152,7 @@ namespace NeoServer.Server
             {
                 connection.Close();
             }
+            creatureInstances.TryRemoveFromLoggedPlayers(player.Id);
 
             RemoveCreature(player);
 
@@ -166,7 +165,7 @@ namespace NeoServer.Server
         /// <param name="playerId"></param>
         /// <param name="connection"></param>
         /// <returns></returns>
-        public bool GetPlayerConnection(uint playerId, out IConnection connection) => playersConnection.TryGetValue(playerId, out connection);
+        public virtual bool GetPlayerConnection(uint playerId, out IConnection connection) => playersConnection.TryGetValue(playerId, out connection);
 
     }
 }

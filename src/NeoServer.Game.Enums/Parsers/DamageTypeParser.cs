@@ -1,9 +1,4 @@
 ﻿using NeoServer.Game.Common.Item;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace NeoServer.Game.Common.Parsers
 {
@@ -26,6 +21,29 @@ namespace NeoServer.Game.Common.Parsers
                 DamageType.Death => "death",
                 DamageType.AbsorbPercentPhysical => "lifedrain",
                 _ => "physical"
+            };
+        }
+        public static DamageType Parse(string type)
+        {
+            return type switch
+            {
+                "melee" => DamageType.Melee,
+                "physical" => DamageType.Physical,
+                "energy" => DamageType.Energy,
+                "fire" => DamageType.Fire,
+                "firefield" => DamageType.FireField,
+                "manadrain" => DamageType.ManaDrain,
+                "firearea" => DamageType.Fire,
+                "poison" => DamageType.Earth,
+                "earth" => DamageType.Earth,
+                "bleed" => DamageType.Physical,
+                "drown" => DamageType.Drown,
+                "ice" => DamageType.Ice,
+                "holy" => DamageType.Holy,
+                "death" => DamageType.Death,
+                "lifedrain" => DamageType.AbsorbPercentPhysical,
+                "mortarea" => DamageType.Death,
+                _ => DamageType.Melee
             };
         }
     }

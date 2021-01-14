@@ -1,13 +1,11 @@
-using NeoServer.Game.Contracts.Combat;
+using NeoServer.Game.Common;
+using NeoServer.Game.Common.Combat.Structs;
+using NeoServer.Game.Common.Location;
+using NeoServer.Game.Common.Location.Structs;
 using NeoServer.Game.Contracts.Creatures;
 using NeoServer.Game.Contracts.Items;
 using NeoServer.Game.Contracts.World;
 using NeoServer.Game.Contracts.World.Tiles;
-using NeoServer.Game.Common;
-using NeoServer.Game.Common.Combat.Structs;
-using NeoServer.Game.Common.Item;
-using NeoServer.Game.Common.Location;
-using NeoServer.Game.Common.Location.Structs;
 using System.Collections.Generic;
 
 namespace NeoServer.Game.Contracts
@@ -33,20 +31,22 @@ namespace NeoServer.Game.Contracts
 
         IList<byte> GetDescription(Items.IThing thing, ushort fromX, ushort fromY, byte currentZ, bool isUnderground, byte windowSizeX = 18, byte windowSizeY = 14);
         bool ArePlayersAround(Location location);
-        void AddCreature(ICreature creature);
+        void PlaceCreature(ICreature creature);
         ITile GetNextTile(Location fromLocation, Direction direction);
-        void RemoveThing(IThing thing, IDynamicTile tile, byte amount = 1);
         IList<byte> GetFloorDescription(Items.IThing thing, ushort fromX, ushort fromY, byte currentZ, byte width, byte height, int verticalOffset, ref int skip);
         IEnumerable<ICreature> GetPlayersAtPositionZone(Location location);
-        void AddItem(IThing thing, IDynamicTile tile);
         bool IsInRange(Location start, Location current, Location target, FindPathParams fpp);
         HashSet<ICreature> GetCreaturesAtPositionZone(Location location, Location toLocation);
         void PropagateAttack(ICombatActor actor, CombatDamage damage, Coordinate[] area);
         void MoveCreature(IWalkableCreature creature);
         void CreateBloodPool(ILiquid liquid, IDynamicTile tile);
-        ITile GetTileDestination(IDynamicTile tile);
-        bool TryMoveThing(IMoveableThing thing, Location toLocation, byte amount =1);
-        void ReplaceThing(IThing thingToRemove, IThing thingToAdd, byte amount = 1);
+        ITile GetTileDestination(ITile tile);
+        bool TryMoveCreature(ICreature creature, Location toLocation);
         bool CanGoToDirection(Location location, Direction direction, ITileEnterRule rule);
+        void RemoveCreature(ICreature creature);
+        void SwapCreatureBetweenSectors(ICreature creature, Location fromLocation, Location toLocation);
+        HashSet<ICreature> GetSpectators(Location fromLocation, Location toLocation, bool onlyPlayers = false);
+        HashSet<ICreature> GetSpectators(Location fromLocation, bool onlyPlayers = false);
+        IEnumerable<ICreature> GetCreaturesAtPositionZone(Location location, bool onlyPlayers = false);
     }
 }

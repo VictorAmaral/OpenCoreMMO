@@ -3,10 +3,6 @@ using NeoServer.Game.Common;
 using NeoServer.Game.Contracts.Creatures;
 using NeoServer.Game.Contracts.Spells;
 using NeoServer.Game.Creatures.Spells;
-using NeoServer.Server.Helpers;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace NeoServer.Game.Contracts.Combat.Defenses
 {
@@ -17,6 +13,6 @@ namespace NeoServer.Game.Contracts.Combat.Defenses
         {
             Spell = new HealSpell(new MinMax(min, max), effect);
         }
-        public override void Defende(ICombatActor actor) => Spell?.Invoke(actor, out var error);
+        public override void Defende(ICombatActor actor) => Spell?.Invoke(actor,null, out var error);
     }
 }

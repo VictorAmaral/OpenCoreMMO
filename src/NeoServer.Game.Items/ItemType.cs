@@ -1,11 +1,13 @@
 ﻿
-using NeoServer.Game.Contracts.Items;
+using NeoServer.Enums.Creatures.Enums;
 using NeoServer.Game.Common;
 using NeoServer.Game.Common.Item;
+using NeoServer.Game.Common.Parsers;
 using NeoServer.Game.Common.Players;
+using NeoServer.Game.Contracts.Items;
+using NeoServer.Game.Effects.Parsers;
 using System;
 using System.Collections.Generic;
-using NeoServer.Game.Common.Parsers;
 
 namespace NeoServer.Game.Items
 {
@@ -247,5 +249,9 @@ namespace NeoServer.Game.Items
         public Slot BodyPosition => SlotTypeParser.Parse(Attributes?.GetAttribute(ItemAttribute.BodyPosition));
         public ShootType ShootType => ShootTypeParser.Parse(Attributes?.GetAttribute(ItemAttribute.ShootType));
         public WeaponType WeaponType => WeaponTypeParser.Parse(Attributes?.GetAttribute(ItemAttribute.WeaponType));
+        public DamageType DamageType => DamageTypeParser.Parse(Attributes?.GetAttribute(ItemAttribute.Damage));
+        public EffectT EffectT => EffectParser.Parse(Attributes?.GetAttribute(ItemAttribute.Effect));
+
+
     }
 }

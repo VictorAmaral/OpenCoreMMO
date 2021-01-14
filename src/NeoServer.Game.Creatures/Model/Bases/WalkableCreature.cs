@@ -1,13 +1,13 @@
-﻿using NeoServer.Game.Contracts.Creatures;
+﻿using NeoServer.Game.Common.Location;
+using NeoServer.Game.Common.Location.Structs;
+using NeoServer.Game.Contracts.Creatures;
 using NeoServer.Game.Contracts.World;
 using NeoServer.Game.Contracts.World.Tiles;
 using NeoServer.Game.Creatures.Enums;
-using NeoServer.Game.Common.Location;
-using NeoServer.Game.Common.Location.Structs;
+using NeoServer.Game.Creatures.Monsters;
 using NeoServer.Server.Model.Players.Contracts;
 using System;
 using System.Collections.Concurrent;
-using NeoServer.Game.Creatures.Monsters;
 
 namespace NeoServer.Game.Creatures.Model.Bases
 {
@@ -20,6 +20,8 @@ namespace NeoServer.Game.Creatures.Model.Bases
         public event OnTurnedToDirection OnTurnedToDirection;
         public event StartFollow OnStartedFollowing;
         public event ChangeSpeed OnChangedSpeed;
+        public event TeleportTo OnTeleported;
+        public event Moved OnCreatureMoved;
         #endregion
 
         protected IPathAccess PathAccess { get; }
@@ -35,7 +37,7 @@ namespace NeoServer.Game.Creatures.Model.Bases
 
         protected CooldownList Cooldowns { get; } = new CooldownList();
         public uint EventWalk { get; set; }
-        public IDynamicTile Tile { get; set; }
+       
         public virtual ushort Speed { get; protected set; }
         public uint Following { get; private set; }
         public bool IsFollowing => Following > 0;
@@ -46,7 +48,7 @@ namespace NeoServer.Game.Creatures.Model.Bases
         public bool HasFollowPath { get; private set; }
         public virtual FindPathParams PathSearchParams => new FindPathParams(!HasFollowPath, true, true, false, 12, 1, 1, false);
 
-        public virtual void OnMoved(IDynamicTile fromTile, IDynamicTile toTile)
+        public virtual void OnMoved(IDynamicTile fromTile, IDynamicTile toTile, ICylinderSpectator[] spectators)
         {
             lastStepCost = 1;
 
@@ -58,10 +60,12 @@ namespace NeoServer.Game.Creatures.Model.Bases
             {
                 OnCompleteWalking?.Invoke(this);
             }
+            OnCreatureMoved?.Invoke(this, fromTile.Location, toTile.Location, spectators);
         }
         public void TurnTo(Direction direction)
         {
-            Direction = direction;
+            if (direction == Direction) return;
+            SetDirection(direction);
             OnTurnedToDirection?.Invoke(this, direction);
         }
         public int StepDelayMilliseconds
@@ -71,6 +75,7 @@ namespace NeoServer.Game.Creatures.Model.Bases
                 if (FirstStep)
                     return 0;
 
+                if (Speed == 0) return 0;
                 return (int)(Tile.StepSpeed / (decimal)Speed * 1000 * lastStepCost);
             }
         }
@@ -97,9 +102,11 @@ namespace NeoServer.Game.Creatures.Model.Bases
             StopFollowing();
         }
 
-        public void StartFollowing(IWalkableCreature creature, FindPathParams fpp)
+        public void StartFollowing(ICreature creature, FindPathParams fpp)
         {
+            if (Speed == 0) return;
             if (creature is null) return;
+
             if (IsFollowing)
             {
                 Following = creature.CreatureId;
@@ -110,7 +117,7 @@ namespace NeoServer.Game.Creatures.Model.Bases
             Following = creature.CreatureId;
             OnStartedFollowing?.Invoke(this, creature, fpp);
         }
-        public void Follow(IWalkableCreature creature)
+        public void Follow(ICreature creature)
         {
             if (!CanSee(creature.Location, 9, 9))
             {
@@ -148,6 +155,8 @@ namespace NeoServer.Game.Creatures.Model.Bases
 
         public virtual bool TryWalkTo(params Direction[] directions)
         {
+            if (Speed == 0) return false;
+
             if (!WalkingQueue.IsEmpty)
             {
                 WalkingQueue.Clear();
@@ -194,6 +203,11 @@ namespace NeoServer.Game.Creatures.Model.Bases
             }
 
             return false;
+        }
+
+        public virtual void TeleportTo(Location location)
+        {
+            OnTeleported?.Invoke(this, location);
         }
 
         public byte[] GetRaw(IPlayer playerRequesting) => CreatureRaw.Convert(playerRequesting, this);

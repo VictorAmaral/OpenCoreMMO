@@ -1,9 +1,9 @@
-﻿using NeoServer.Game.Contracts;
-using NeoServer.Game.Common.Location;
+﻿using NeoServer.Game.Common.Location;
+using NeoServer.Game.Contracts;
+using NeoServer.Game.Contracts.Items.Types;
+using NeoServer.Game.Contracts.World.Tiles;
 using NeoServer.Networking.Packets.Incoming;
 using NeoServer.Server.Model.Players.Contracts;
-using NeoServer.Game.Contracts.World.Tiles;
-using NeoServer.Game.Contracts.Items.Types;
 
 namespace NeoServer.Server.Commands.Movement
 {
@@ -27,7 +27,7 @@ namespace NeoServer.Server.Commands.Movement
 
             var container = player.Containers[itemThrow.ToLocation.ContainerId];
 
-            player.MoveThing(fromTile, container, item, itemThrow.Count, 0, (byte)itemThrow.ToLocation.ContainerSlot);
+            player.MoveItem(fromTile, container, item, itemThrow.Count, 0, (byte)itemThrow.ToLocation.ContainerSlot);
         }
 
         public static bool IsApplicable(ItemThrowPacket itemThrowPacket) =>

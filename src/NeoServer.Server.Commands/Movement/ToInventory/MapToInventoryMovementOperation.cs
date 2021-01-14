@@ -1,10 +1,10 @@
 ﻿
+using NeoServer.Game.Common.Location;
 using NeoServer.Game.Contracts;
 using NeoServer.Game.Contracts.Items;
-using NeoServer.Game.Common.Location;
+using NeoServer.Game.Contracts.World;
 using NeoServer.Networking.Packets.Incoming;
 using NeoServer.Server.Model.Players.Contracts;
-using NeoServer.Game.Contracts.World;
 
 namespace NeoServer.Server.Commands.Movement
 {
@@ -17,7 +17,7 @@ namespace NeoServer.Server.Commands.Movement
             if (map[itemThrow.FromLocation] is not ITile fromTile) return;
             if (fromTile.TopItemOnStack is not IItem item) return;
 
-            player.MoveThing(fromTile, player.Inventory, item, itemThrow.Count, 0, (byte)itemThrow.ToLocation.Slot);
+            player.MoveItem(fromTile, player.Inventory, item, itemThrow.Count, 0, (byte)itemThrow.ToLocation.Slot);
         }
 
         public static bool IsApplicable(ItemThrowPacket itemThrowPacket) =>

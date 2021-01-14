@@ -1,7 +1,5 @@
-﻿using NeoServer.Game.Common.Item;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using NeoServer.Enums.Creatures.Enums;
+using NeoServer.Game.Common.Item;
 
 namespace NeoServer.Game.Common.Combat.Structs
 {
@@ -11,8 +9,15 @@ namespace NeoServer.Game.Common.Combat.Structs
         {
             Damage = damage;
             Type = type;
+            Effect = EffectT.None;
         }
-     
+        public CombatDamage(ushort damage, DamageType type, EffectT effect)
+        {
+            Damage = damage;
+            Type = type;
+            Effect = effect;
+        }
+
         /// <summary>
         /// Check if damage is elemental
         /// </summary>
@@ -27,6 +32,7 @@ namespace NeoServer.Game.Common.Combat.Structs
         /// Type of the damage (physical, fire...)
         /// </summary>
         public DamageType Type { get; }
+        public EffectT Effect { get; set; }
 
         /// <summary>
         /// Sets a new damage
