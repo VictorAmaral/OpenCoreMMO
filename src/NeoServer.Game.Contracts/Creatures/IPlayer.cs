@@ -144,6 +144,8 @@ namespace NeoServer.Server.Model.Players.Contracts
         void Use(IUseable item);
         void Use(IUseableOn item, IItem onItem);
         bool Login();
+        void SendMessageTo(IPlayer player);
+        bool CastSpell(string message);
 
         string IThing.InspectionText => $"{Name} (Level {Level}). He is a {Vocation.Name.ToLower()}{GuildText}";
         private string GuildText => string.IsNullOrWhiteSpace(Guild) ? string.Empty : $". He is a member of {Guild}";
